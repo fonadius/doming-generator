@@ -10,8 +10,8 @@ if __name__ == "__main__":
     print("Applying model.")
     model.initialize_model_randomly()
 
-    deformed_image = model.apply_model(orig, 0, 3)
-    print("Model applied.")
-    deformed_image.save("./")
+    for i in range(5):
+        deformed_image = model.apply_model(orig, 0, i)
+        deformed_image.save("./")
     print("Run successful.")
 

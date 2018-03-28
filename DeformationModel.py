@@ -74,7 +74,7 @@ class DeformationModel:
         """Generates vector of reasonable random model coefficients a_i."""
         # TODO: coefficients should not be just random but also reasonable
         flt = np.random.rand(9)
-        scale = np.ones((9,)) / 10 #np.random.randint(1, 10, 9)
+        scale = np.ones((9,)) / 100 #np.random.randint(1, 10, 9)
         return flt * scale
 
     @staticmethod
