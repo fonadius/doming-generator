@@ -3,6 +3,7 @@ import numpy as np
 import MyMath
 from Image import Image
 import math
+from scipy import optimize
 
 
 class DeformationModel:
@@ -34,8 +35,8 @@ class DeformationModel:
             img.initialize_with_image(original)
             return img
 
-        for yi in range(img.height()):
-            for xi in range(img.width()):
+        for yi in range(img.miny, img.maxy + 1):
+            for xi in range(img.minx, img.maxx + 1):
                 # Each pixel has integer position in it's center
                 pos = [xi, yi] + self.calculate_shift(xi, yi, t2) - self.calculate_shift(xi, yi, t1)
                 q11 = [int(math.floor(pos[0])), int(math.ceil(pos[1]))]
@@ -74,7 +75,7 @@ class DeformationModel:
         """Generates vector of reasonable random model coefficients a_i."""
         # TODO: coefficients should not be just random but also reasonable
         flt = np.random.rand(9)
-        scale = np.ones((9,)) / 100 #np.random.randint(1, 10, 9)
+        scale = np.ones((9,)) / 100
         return flt * scale
 
     @staticmethod
