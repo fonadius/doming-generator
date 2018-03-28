@@ -42,10 +42,10 @@ class DeformationModel:
                 q21 = [int(math.floor(pos[0])), int(math.floor(pos[1]))]
                 q12 = [int(math.ceil(pos[0])), int(math.ceil(pos[1]))]
                 q22 = [int(math.ceil(pos[0])), int(math.floor(pos[1]))]
-                q11.append(img[q11])
-                q21.append(img[q21])
-                q12.append(img[q12])
-                q22.append(img[q22])
+                q11.append(original[q11])
+                q21.append(original[q21])
+                q12.append(original[q12])
+                q22.append(original[q22])
 
                 value = MyMath.linear_interpolation(q11, q21, q12, q22, pos[0], pos[1])
                 img[(xi, yi)] = value
@@ -63,9 +63,9 @@ class DeformationModel:
         raise NotImplementedError("Not implemented")
         # TODO: Calculate model by least square approximation from shift_vectors
 
-    def initialize_model_randomly(self, time_forward = True):
+    def initialize_model_randomly(self, time_forward=True):
         """Randomly generates model with reasonable coefficients."""
-        self.coeffs = self.expand_coeffs(self.generate_random_coeffs())
+        self.coeffs = self.generate_random_coeffs()
         self.forward_model = time_forward
         self.initialized = True
 
@@ -74,7 +74,7 @@ class DeformationModel:
         """Generates vector of reasonable random model coefficients a_i."""
         # TODO: coefficients should not be just random but also reasonable
         flt = np.random.rand(9)
-        scale = np.random.randint(1, 10, 9)
+        scale = np.ones((9,)) / 10 #np.random.randint(1, 10, 9)
         return flt * scale
 
     @staticmethod

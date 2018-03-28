@@ -2,6 +2,7 @@
 from scipy import misc
 import numpy as np
 import warnings
+import skimage.transform
 
 
 class Image:
@@ -14,20 +15,9 @@ class Image:
         """Accessing image data. Item should be two element list-like object of integers and is interpreted as (x,y)"""
         # TODO: check for tuple, list or numpy
         if self.__outside_boundaries(item):
-            item = np.array(item[:2])
-            # If the boundary miss is only near, then copy the edge
-            if not self.__outside_boundaries(item + [1, 0]):
-                return self.__getitem__(item + [1, 0])
-            if not self.__outside_boundaries(item + [-1, 0]):
-                return self.__getitem__(item + [-1, 0])
-            if not self.__outside_boundaries(item + [0, 1]):
-                return self.__getitem__(item + [0, 1])
-            if not self.__outside_boundaries(item + [0, -1]):
-                return self.__getitem__(item + [0, -1])
-            else:
-                # warnings.warn("Accessing elements far outside the image boundaries x:" + str(item[0]) + " y:" +
-                #               str(item[1]))
-                return 0
+            item[0] = max(min(item[0], self.width() - 1), 0)
+            item[1] = max(min(item[1], self.height() - 1), 0)
+            return self.__getitem__(item)
 
         return self.image_data[item[1]][item[0]]
 
@@ -70,6 +60,7 @@ class Image:
     def load(self, path, time_stamp):
         # self.file = misc.imread(path)
         self.image_data = misc.face(True)
+        self.image_data = skimage.transform.resize(self.image_data, (256, 192))
         self.time_stamp = time_stamp
 
     def save(self, folder_path):

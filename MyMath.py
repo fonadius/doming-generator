@@ -29,16 +29,24 @@ def linear_interpolation(q11, q12, q21, q22, p_x, p_y):
     """
     # x interpolation
     total_dist = q11[0] - q12[0]
-    rat1 = (q11[0] - p_x) / total_dist
-    rat2 = 1 - rat1
+    if total_dist == 0:  # TODO: comparing double with equality
+        rat1 = 1
+        rat2 = 0
+    else:
+        rat1 = (q11[0] - p_x) / total_dist
+        rat2 = 1 - rat1
 
     p1 = q11[2] * rat1 + q12[2] * rat2
     p2 = q21[2] * rat1 + q22[2] * rat2
 
     # y interpolation
     total_dist = q11[1] - q21[1]
-    rat1 = (q11[2] - p_y) / total_dist
-    rat2 = 1 - rat1
+    if total_dist == 0:  # TODO: comparing double with equality
+        rat1 = 1
+        rat2 = 0
+    else:
+        rat1 = (q11[2] - p_y) / total_dist
+        rat2 = 1 - rat1
 
     p = p1 * rat1 + p2 * rat2
     return p
