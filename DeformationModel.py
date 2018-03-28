@@ -2,6 +2,7 @@
 import numpy as np
 import MyMath
 from Image import Image
+import math
 
 
 class DeformationModel:
@@ -26,6 +27,7 @@ class DeformationModel:
             raise AttributeError("Model cannot go in this time direction.")
 
         img = Image()
+        img.initialize_with_zero(original.shape())
         img.time_stamp = t2
 
         if t1 == t2:
@@ -34,10 +36,19 @@ class DeformationModel:
 
         for yi in range(img.height()):
             for xi in range(img.width()):
-                shift = self.calculate_shift(xi, yi, t2) - self.calculate_shift(xi, yi, t1)
+                # Each pixel has integer position in it's center
+                pos = [xi, yi] + self.calculate_shift(xi, yi, t2) - self.calculate_shift(xi, yi, t1)
+                q11 = [int(math.floor(pos[0])), int(math.ceil(pos[1]))]
+                q21 = [int(math.floor(pos[0])), int(math.floor(pos[1]))]
+                q12 = [int(math.ceil(pos[0])), int(math.ceil(pos[1]))]
+                q22 = [int(math.ceil(pos[0])), int(math.floor(pos[1]))]
+                q11.append(img[q11])
+                q21.append(img[q21])
+                q12.append(img[q12])
+                q22.append(img[q22])
 
-                value = MyMath.linear_interpolation([])
-                img.image_data[yi][xi] = 0
+                value = MyMath.linear_interpolation(q11, q21, q12, q22, pos[0], pos[1])
+                img[(xi, yi)] = value
 
         return img
 
