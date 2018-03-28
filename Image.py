@@ -15,9 +15,9 @@ class Image:
         """Accessing image data. Item should be two element list-like object of integers and is interpreted as (x,y)"""
         # TODO: check for tuple, list or numpy
         if self.__outside_boundaries(item):
-            item[0] = max(min(item[0], self.width() - 1), 0)
-            item[1] = max(min(item[1], self.height() - 1), 0)
-            return self.__getitem__(item)
+            x = max(min(item[0], self.width() - 1), 0)
+            y = max(min(item[1], self.height() - 1), 0)
+            return self.image_data[y][x]
 
         return self.image_data[item[1]][item[0]]
 
@@ -60,7 +60,7 @@ class Image:
     def load(self, path, time_stamp):
         # self.file = misc.imread(path)
         self.image_data = misc.face(True)
-        self.image_data = skimage.transform.resize(self.image_data, (256, 192))
+        self.image_data = skimage.transform.resize(self.image_data, (512, 384))
         self.time_stamp = time_stamp
 
     def save(self, folder_path):
