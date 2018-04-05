@@ -13,5 +13,7 @@ if __name__ == "__main__":
     for i in range(5):
         deformed_image = model.apply_model(orig, 0, i)
         deformed_image.save("./")
+        print("Done iteration ", i)
+
     print("Run successful.")
 

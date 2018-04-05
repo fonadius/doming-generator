@@ -36,19 +36,17 @@ def linear_interpolation(q11, q12, q21, q22, p_x, p_y):
         p2 = q21[2]
     else:
         rat1 = (q11[0] - p_x) / (q11[0] - q12[0])
-        rat2 = 1 - rat1
 
-        p1 = q11[2] * rat1 + q12[2] * rat2
-        p2 = q21[2] * rat1 + q22[2] * rat2
+        p1 = q11[2] * rat1 + q12[2] * (1 - rat1)
+        p2 = q21[2] * rat1 + q22[2] * (1 - rat1)
 
     # y interpolation
     if q11[1] == q21[1]:
         p = p1
     else:
         rat1 = (q11[2] - p_y) / (q11[1] - q21[1])
-        rat2 = 1 - rat1
 
-        p = p1 * rat1 + p2 * rat2
+        p = p1 * rat1 + p2 * (1 - rat1)
 
     return p
 
