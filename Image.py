@@ -19,12 +19,13 @@ class Image:
 
     def __getitem__(self, item):
         """Accessing image data. Item should be two element list-like object of integers and is interpreted as (x,y)"""
-        if self.__outside_boundaries(item):
-            x = max(min(item[0], self.maxx), self.minx)
-            y = max(min(item[1], self.maxy), self.miny)
-            return self.image_data[y][x]
+        return self.get(item[0], item[1])
 
-        return self.image_data[item[1] - self.miny][item[0] - self.minx]
+    def get(self, x, y):
+        """Accessing image data"""
+        x = max(min(x, self.maxx), self.minx)
+        y = max(min(y, self.maxy), self.miny)
+        return self.image_data[y - self.miny][x - self.minx]
 
     def __setitem__(self, key, value):
         """Setting image data. Key should be two element lit-like object of integers and is interpreted as (x,y)"""
