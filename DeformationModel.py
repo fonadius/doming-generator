@@ -35,32 +35,36 @@ class DeformationModel:
             img.initialize_with_image(original)
             return img
 
-        for yi in range(img.miny, img.maxy + 1):
-            for xi in range(img.minx, img.maxx + 1):
-                # Each pixel has integer position in it's center
-                pos = (xi, yi) + self.calculate_shift(xi, yi, t2) - self.calculate_shift(xi, yi, t1)
+        def generate(y, x):
+            """Function describing the transformed image"""
+            # move to time t2
+            posx = x + self.calculate_shift(x, y, t2, 0) - self.calculate_shift(x, y, t1, 0)
+            posy = y + self.calculate_shift(x, y, t2, 1) - self.calculate_shift(x, y, t1, 1)
 
-                q11x = int(math.floor(pos[0]))
-                q11y = int(math.ceil(pos[1]))
-                q11 = (q11x, q11y, original.get(q11x, q11y))
-                q21x = int(math.floor(pos[0]))
-                q21y = int(math.floor(pos[1]))
-                q21 = (q21x, q21y, original.get(q21x, q21y))
-                q12x = int(math.ceil(pos[0]))
-                q12y = int(math.ceil(pos[1]))
-                q12 = (q12x, q12y, original.get(q12x, q12y))
-                q22x = int(math.ceil(pos[0]))
-                q22y = int(math.floor(pos[1]))
-                q22 = (q22x, q22y, original.get(q22x, q22y))
+            x_left = int(posx)    # math.floor(pos[0])
+            x_right = x_left + 1    # math.ceil(pos[0])
+            y_down = int(posy)    # math.floor(pos[1])
+            y_up = y_down + 1       # math.ceil(pos[1])
 
-                value = MyMath.linear_interpolation(q11, q21, q12, q22, pos[0], pos[1])
-                img.set(xi, yi, value)
+            q11 = (x_left, y_up, original.get(x_left, y_up))
+            q21 = (x_left, y_down, original.get(x_left, y_down))
+            q12 = (x_right, y_up, original.get(x_right, y_up))
+            q22 = (x_right, y_down, original.get(x_right, y_down))
+
+            return MyMath.linear_interpolation(q11, q21, q12, q22, posx, posy)
+
+        img.image_data = np.fromfunction(np.vectorize(generate), original.image_data.shape)
 
         return img
 
-    def calculate_shift(self, x, y, t):
-        c = self.coeffs
-        shift = (c[0] + c[1]*x + c[2]*x*x + c[3]*y + c[4]*y*y + c[5]*x*y) * (c[6]*t + c[7]*t*t + c[8]*t*t*t)
+    def calculate_shift(self, x, y, t, axis):
+        t2 = t*t
+        t3 = t2*t
+
+        c = self.coeffs[axis]
+        shift = (c[0] + c[1] * x + c[2] * x * x + c[3] * y + c[4] * y * y + c[5] * x * y) * \
+                (c[6] * t + c[7] * t2 + c[8] * t3)
+
         return shift
 
     def initialize_model(self, shift_vectors):

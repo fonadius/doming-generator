@@ -12,20 +12,15 @@ class Image:
         self.image_data = None
         self.time_stamp = None
 
-        self.minx = 0
-        self.maxx = 0
-        self.miny = 0
-        self.maxy = 0
-
     def __getitem__(self, item):
         """Accessing image data. Item should be two element list-like object of integers and is interpreted as (x,y)"""
         return self.get(item[0], item[1])
 
     def get(self, x, y):
         """Accessing image data"""
-        x = max(min(x, self.maxx), self.minx)
-        y = max(min(y, self.maxy), self.miny)
-        return self.image_data[y - self.miny][x - self.minx]
+        x = max(min(x, self.width() - 1), 0)
+        y = max(min(y, self.height() - 1), 0)
+        return self.image_data[y][x]
 
     def __setitem__(self, key, value):
         """Setting image data. Key should be two element lit-like object of integers and is interpreted as (x,y)"""
@@ -38,10 +33,10 @@ class Image:
             warnings.warn("Trying to set element (x:" + str(value[0]) + ", y:" + str(value[1]) + ") outside the image.")
             return
 
-        self.image_data[y - self.miny][x - self.minx] = value
+        self.image_data[y][x] = value
 
     def __outside_boundaries(self, x, y):
-        return x < self.minx or x > self.maxx or y < self.miny or y > self.maxy
+        return x < 0 or x >= self.width() or y < 0 or y >= self.height()
 
     def set_emtpy_image(self, shape, time_stamp):
         self.image_data = np.zeros(shape, dtype=int)
@@ -50,18 +45,10 @@ class Image:
     def initialize_with_image(self, other):
         self.image_data = np.copy(other.image_data)
         self.time_stamp = other.time_stamp
-        self.minx = other.minx
-        self.maxx = other.maxx
-        self.miny = other.miny
-        self.maxy = other.maxy
 
     def initialize_with_zero(self, shape):
         self.image_data = np.zeros(shape)
         self.time_stamp = 0
-        self.minx = -int(shape[1] / 2)
-        self.maxx = shape[1] + self.minx - 1
-        self.miny = -int(shape[0] / 2)
-        self.maxy = shape[0] + self.miny - 1
 
     def is_initialized(self):
         return self.time_stamp is not None and self.image_data is not None
@@ -69,17 +56,18 @@ class Image:
     def shape(self):
         return self.image_data.shape
 
+    def width(self):
+        return self.image_data.shape[1]
+
+    def height(self):
+        return self.image_data.shape[0]
+
     def load(self, path, time_stamp):
         # self.file = misc.imread(path)
         self.image_data = misc.face(True)
-        self.image_data = skimage.transform.resize(self.image_data, (512, 384))
-        # self.image_data = skimage.transform.resize(self.image_data, (128, 96))
+        self.image_data = skimage.transform.resize(self.image_data, (384, 512))
+        # self.image_data = skimage.transform.resize(self.image_data, (96, 128))
         self.time_stamp = time_stamp
-
-        self.minx = -int(self.image_data.shape[1] / 2)
-        self.maxx = self.image_data.shape[1] + self.minx - 1
-        self.miny = -int(self.image_data.shape[0] / 2)
-        self.maxy = self.image_data.shape[0] + self.miny - 1
 
     def save(self, folder_path):
         if not self.is_initialized():

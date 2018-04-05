@@ -1,3 +1,6 @@
+import math
+
+
 def point_distance(p1, p2):
     """
     Calculated Euclidian distance between p1 and p2 in 2D.
@@ -21,8 +24,6 @@ def linear_interpolation(q11, q12, q21, q22, p_x, p_y):
         Values q_i are expected to be in strict orthogonal grid, where q11 and q21 have the same x coordinates (the same
         applies for q12 and q22) and q11 and q12 have the same y coordinates (the same applies for q21 and q22).
 
-        All coordinates are expected to be integers not floats.
-
         :param q11 Value and position of near pixel. Saved as triplet (x, y, value)
         :param q12 Value and position of near pixel. Saved as triplet (x, y, value)
         :param q21 Value and position of near pixel. Saved as triplet (x, y, value)
@@ -31,7 +32,7 @@ def linear_interpolation(q11, q12, q21, q22, p_x, p_y):
         :param p_y y position of calculated value
     """
     # x interpolation
-    if q11[0] == q12[0]:
+    if math.isclose(q11[0], q12[0], abs_tol=0.1):  # Coordinates are treated more or less as integers, hence abs_tol=0.1
         p1 = q11[2]
         p2 = q21[2]
     else:
@@ -41,7 +42,7 @@ def linear_interpolation(q11, q12, q21, q22, p_x, p_y):
         p2 = q21[2] * rat1 + q22[2] * (1 - rat1)
 
     # y interpolation
-    if q11[1] == q21[1]:
+    if math.isclose(q11[1], q21[1], abs_tol=0.1):  # Coordinates are treated more or less as integers, hence abs_tol=0.1
         p = p1
     else:
         rat1 = (q11[2] - p_y) / (q11[1] - q21[1])
