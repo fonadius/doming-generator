@@ -11,7 +11,7 @@ class DeformationModel:
        S(x,y,t) = (a_0 + a_1*x + a_2*x^2 + a_3*y + a_4*y^2 + a_5*x*y) * (a_6*t + a_7*t^2 + a_8*t^3)"""
 
     def __init__(self):
-        self.coeffs = np.zeros((18,2))  # c_0 through c_17 (each coefficient is vector (x, y))
+        self.coeffs = np.zeros((18, 2))  # c_0 through c_17 (each coefficient is vector (x, y))
         self.forward_model = False  # Does the model describes movement forward or backward in time?
         self.initialized = False
 
@@ -38,18 +38,23 @@ class DeformationModel:
         for yi in range(img.miny, img.maxy + 1):
             for xi in range(img.minx, img.maxx + 1):
                 # Each pixel has integer position in it's center
-                pos = [xi, yi] + self.calculate_shift(xi, yi, t2) - self.calculate_shift(xi, yi, t1)
-                q11 = [int(math.floor(pos[0])), int(math.ceil(pos[1]))]
-                q21 = [int(math.floor(pos[0])), int(math.floor(pos[1]))]
-                q12 = [int(math.ceil(pos[0])), int(math.ceil(pos[1]))]
-                q22 = [int(math.ceil(pos[0])), int(math.floor(pos[1]))]
-                q11.append(original[q11])
-                q21.append(original[q21])
-                q12.append(original[q12])
-                q22.append(original[q22])
+                pos = (xi, yi) + self.calculate_shift(xi, yi, t2) - self.calculate_shift(xi, yi, t1)
+
+                q11x = int(math.floor(pos[0]))
+                q11y = int(math.ceil(pos[1]))
+                q11 = (q11x, q11y, original.get(q11x, q11y))
+                q21x = int(math.floor(pos[0]))
+                q21y = int(math.floor(pos[1]))
+                q21 = (q21x, q21y, original.get(q21x, q21y))
+                q12x = int(math.ceil(pos[0]))
+                q12y = int(math.ceil(pos[1]))
+                q12 = (q12x, q12y, original.get(q12x, q12y))
+                q22x = int(math.ceil(pos[0]))
+                q22y = int(math.floor(pos[1]))
+                q22 = (q22x, q22y, original.get(q22x, q22y))
 
                 value = MyMath.linear_interpolation(q11, q21, q12, q22, pos[0], pos[1])
-                img[(xi, yi)] = value
+                img.set(xi, yi, value)
 
         return img
 

@@ -29,14 +29,19 @@ class Image:
 
     def __setitem__(self, key, value):
         """Setting image data. Key should be two element lit-like object of integers and is interpreted as (x,y)"""
-        if self.__outside_boundaries(key):
+        self.set(key[0], key[1], value)
+
+    def set(self, x, y, value):
+        """Setting image data."""
+        if self.__outside_boundaries(x, y):
             # Do nothing, when trying to set element outside the image
             warnings.warn("Trying to set element (x:" + str(value[0]) + ", y:" + str(value[1]) + ") outside the image.")
             return
-        self.image_data[key[1] - self.miny][key[0] - self.minx] = value
 
-    def __outside_boundaries(self, key):
-        return key[0] < self.minx or key[0] > self.maxx or key[1] < self.miny or key[1] > self.maxy
+        self.image_data[y - self.miny][x - self.minx] = value
+
+    def __outside_boundaries(self, x, y):
+        return x < self.minx or x > self.maxx or y < self.miny or y > self.maxy
 
     def set_emtpy_image(self, shape, time_stamp):
         self.image_data = np.zeros(shape, dtype=int)
