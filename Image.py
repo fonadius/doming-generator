@@ -3,6 +3,7 @@ from scipy import misc
 import numpy as np
 import warnings
 import skimage.transform
+import os.path
 
 
 class Image:
@@ -18,7 +19,6 @@ class Image:
 
     def __getitem__(self, item):
         """Accessing image data. Item should be two element list-like object of integers and is interpreted as (x,y)"""
-        # TODO: check for tuple, list or numpy
         if self.__outside_boundaries(item):
             x = max(min(item[0], self.maxx), self.minx)
             y = max(min(item[1], self.maxy), self.miny)
@@ -28,7 +28,6 @@ class Image:
 
     def __setitem__(self, key, value):
         """Setting image data. Key should be two element lit-like object of integers and is interpreted as (x,y)"""
-        # TODO: check for tuple, list or numpy
         if self.__outside_boundaries(key):
             # Do nothing, when trying to set element outside the image
             warnings.warn("Trying to set element (x:" + str(value[0]) + ", y:" + str(value[1]) + ") outside the image.")
@@ -80,5 +79,8 @@ class Image:
         if not self.is_initialized():
             raise RuntimeError("Cannot saved uninitialized image")
 
-        name = folder_path + str(self.time_stamp) + ".png"  #TODO: proper path joining
+        if not os.path.exists(folder_path):
+            raise RuntimeError("Folder does not exists: '" + folder_path + "'")
+
+        name = os.path.join(folder_path,str(self.time_stamp) + ".png")
         misc.imsave(name, self.image_data)

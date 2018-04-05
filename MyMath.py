@@ -19,7 +19,10 @@ def linear_interpolation(q11, q12, q21, q22, p_x, p_y):
         .................
         q21 ......... q22
         Values q_i are expected to be in strict orthogonal grid, where q11 and q21 have the same x coordinates (the same
-        applies for q12 and q22) and q11 and q12 have the same y coordinates (the same applies for q21 and q22)
+        applies for q12 and q22) and q11 and q12 have the same y coordinates (the same applies for q21 and q22).
+
+        All coordinates are expected to be integers not floats.
+
         :param q11 Value and position of near pixel. Saved as triplet (x, y, value)
         :param q12 Value and position of near pixel. Saved as triplet (x, y, value)
         :param q21 Value and position of near pixel. Saved as triplet (x, y, value)
@@ -28,26 +31,24 @@ def linear_interpolation(q11, q12, q21, q22, p_x, p_y):
         :param p_y y position of calculated value
     """
     # x interpolation
-    total_dist = q11[0] - q12[0]
-    if total_dist == 0:  # TODO: comparing double with equality
-        rat1 = 1
-        rat2 = 0
+    if q11[0] == q12[0]:
+        p1 = q11[2]
+        p2 = q21[2]
     else:
-        rat1 = (q11[0] - p_x) / total_dist
+        rat1 = (q11[0] - p_x) / (q11[0] - q12[0])
         rat2 = 1 - rat1
 
-    p1 = q11[2] * rat1 + q12[2] * rat2
-    p2 = q21[2] * rat1 + q22[2] * rat2
+        p1 = q11[2] * rat1 + q12[2] * rat2
+        p2 = q21[2] * rat1 + q22[2] * rat2
 
     # y interpolation
-    total_dist = q11[1] - q21[1]
-    if total_dist == 0:  # TODO: comparing double with equality
-        rat1 = 1
-        rat2 = 0
+    if q11[1] == q21[1]:
+        p = p1
     else:
-        rat1 = (q11[2] - p_y) / total_dist
+        rat1 = (q11[2] - p_y) / (q11[1] - q21[1])
         rat2 = 1 - rat1
 
-    p = p1 * rat1 + p2 * rat2
+        p = p1 * rat1 + p2 * rat2
+
     return p
 

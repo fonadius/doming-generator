@@ -85,6 +85,5 @@ class DeformationModel:
                 c_8*t^2*x^2 + c_9*t^2*y + c_10*t^2*y^2 + c_11*t^2*x*y + c_12*t^3 + c_13*t^3*x + c_14*t^3*x^2 +
                 c_15*t^3*y + c_16*t^3*y^2 + c_17*t^3*x*y
             Result is vector of coefficients c_i"""
-        # TODO: can I do it this simply with vectors?
         return np.array([a * b for a in small_coeffs[:6] for b in small_coeffs[6:]])  # (a_0, ... a_5) * (a_6, ... a_8)
 
