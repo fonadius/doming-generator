@@ -67,32 +67,53 @@ class DeformationModel:
 
         return shift
 
-    def initialize_model(self, shift_vectors):
+    def initialize_model(self, shift_vectors, time_forward=True):
         """Initialize model by least square approximation from provided 'shift_vectors'. To generate
             :param shift_vectors np.array with three elements [0] - x shift, [1] - y shift, [2] - time stamp"""
-        raise NotImplementedError("Not implemented")
-        # TODO: Calculate model by least square approximation from shift_vectors
 
-    def initialize_model_randomly(self, time_forward=True):
+        def f(v, c):
+            x = v[0]
+            y = v[1]
+            t = v[2]
+
+            t2 = t * t
+            t3 = t2 * t
+
+            shift = (c[0] + c[1] * x + c[2] * x * x + c[3] * y + c[4] * y * y + c[5] * x * y) * \
+                    (c[6] * t + c[7] * t2 + c[8] * t3)
+            return shift
+
+        def residual(c, val):
+            return f(c) - val
+
+        x0 = [0,] * 9
+
+        solX = optimize.leastsq(residual, x0)[0]
+
+        y0 = [0, ] * 9
+
+        solY = optimize.leastsq(residual, y0)[0]
+
+        self.initialize_model_randomly(time_forward=False)
+
+    def initialize_model_randomly(self, shape=None, time_forward=True):
         """Randomly generates model with reasonable coefficients."""
-        self.coeffs = self.generate_random_coeffs()
+        self.coeffs = self.generate_random_coeffs(shape)
         self.forward_model = time_forward
         self.initialized = True
 
     @staticmethod
-    def generate_random_coeffs():
-        """Generates vector of reasonable random model coefficients a_i."""
+    def generate_random_coeffs(shape=None):
+        """Generates vector of reasonable random model coefficients a_i.
+            shape is (height, width) tuple"""
         # TODO: coefficients should not be just random but also reasonable
         flt = np.random.rand(2, 9)
         scale = np.ones((2, 9)) / 100
-        return flt * scale
+        res = flt * scale
 
-    @staticmethod
-    def expand_coeffs(small_coeffs):
-        """Transforms a_i coefficients into their expanded form:
-            S(x,y,t) = c_0*t + c_1*t*x + c_2*t*x^2 + c_3*t*y + c_4*t*y^2 + c_5*t*x*y + c_6*t^2 + c_7*t^2*x +
-                c_8*t^2*x^2 + c_9*t^2*y + c_10*t^2*y^2 + c_11*t^2*x*y + c_12*t^3 + c_13*t^3*x + c_14*t^3*x^2 +
-                c_15*t^3*y + c_16*t^3*y^2 + c_17*t^3*x*y
-            Result is vector of coefficients c_i"""
-        return np.array([a * b for a in small_coeffs[:6] for b in small_coeffs[6:]])  # (a_0, ... a_5) * (a_6, ... a_8)
+        # move the center of the doming into the middle of the picture
+        if shape:
+            res[0][0] = -shape[1] / 2
+            res[1][0] = -shape[0] / 2
+        return res
 
