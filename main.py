@@ -43,5 +43,6 @@ def restore_images(count):
 
 
 if __name__ == "__main__":
-    restore_images(10)
+    # restore_images(10)
+    deform_images(10)
 

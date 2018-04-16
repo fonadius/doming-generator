@@ -19,8 +19,8 @@ class Image:
 
     def get(self, x, y):
         """Accessing image data"""
-        x = max(min(x, self.width() - 1), 0)
-        y = max(min(y, self.height() - 1), 0)
+        if self.__outside_boundaries(x, y):
+            return 0.0
         return self.image_data[y][x]
 
     def __setitem__(self, key, value):
