@@ -2,8 +2,8 @@
 import numpy as np
 import MyMath
 from Image import Image
-import math
 from scipy import optimize
+import functools
 
 
 class DeformationModel:
@@ -67,28 +67,39 @@ class DeformationModel:
 
         return shift
 
-    def initialize_model(self, shift_vectors, time_forward=True):
+    @staticmethod
+    def calculate_shifts_from_coeffs(x, y, t, c):
+        t2 = t * t
+        t3 = t2 * t
+
+        shift = (c[0] + c[1] * x + c[2] * x * x + c[3] * y + c[4] * y * y + c[5] * x * y) * \
+                (c[6] * t + c[7] * t2 + c[8] * t3)
+
+        return shift
+
+    def initialize_model(self, shifts, positions, time_forward=True):
         """Initialize model by least square approximation from provided 'shift_vectors'. To generate
-            :param shift_vectors np.array with three elements [0] - x shift, [1] - y shift, [2] - time stamp"""
+            :param shifts np.array with three elements [0] - x shift, [1] - y shift, [2] - time stamp"""
 
-        def f(v, c):
-            x = v[0]
-            y = v[1]
-            t = v[2]
-
+        def f(pos, c):
+            x = pos[0]
+            y = pos[1]
+            t = pos[2]
             t2 = t * t
             t3 = t2 * t
 
-            shift = (c[0] + c[1] * x + c[2] * x * x + c[3] * y + c[4] * y * y + c[5] * x * y) * \
-                    (c[6] * t + c[7] * t2 + c[8] * t3)
-            return shift
+            return (c[0] + c[1] * x + c[2] * x * x + c[3] * y + c[4] * y * y + c[5] * x * y) * \
+                (c[6] * t + c[7] * t2 + c[8] * t3)
 
-        def residual(c, val):
-            return f(c) - val
+        def f_list(pos, c):
+            return np.array(map(functools.partial(f, c=c), pos))
 
-        x0 = [0,] * 9
+        def residual(coeffs, shifts, pos):
+            return shifts - f_list(pos, coeffs)
 
-        solX = optimize.leastsq(residual, x0)[0]
+        c0 = [1] * 9
+
+        solX = optimize.leastsq(residual, c0, args=(shifts[0], positions))
 
         y0 = [0, ] * 9
 
@@ -108,7 +119,7 @@ class DeformationModel:
             shape is (height, width) tuple"""
         # TODO: coefficients should not be just random but also reasonable
         flt = np.random.rand(2, 9)
-        scale = np.ones((2, 9)) / 100
+        scale = np.ones((2, 9)) / 1000
         res = flt * scale
 
         # move the center of the doming into the middle of the picture

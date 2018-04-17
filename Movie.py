@@ -9,6 +9,11 @@ class Movie:
         self.micrographs = []
         self.size = 16
 
+    def add(self, img, data_check=True):
+        if data_check and any(m.time_stamp == img.time_stamp for m in self.micrographs):
+            raise RuntimeError("Movie contains two micrographs with equal time stamps.")
+        self.micrographs.append(img)
+
     def initialize(self, micrographs):
         # self.micrographs = micrographs
         self.micrographs = [np.zeros((self.size, self.size), dtype=int), np.zeros((self.size, self.size), dtype=int),
@@ -17,33 +22,36 @@ class Movie:
         self.micrographs[1][10][5] = 256
         self.micrographs[2][12][8] = 256
 
-    def calculate_shifts(self, micro_input):
-        micrographs = []
-        for i in micro_input:
-            micrographs.append(np.copy(i.image_data))
-        sum_micrograph = np.zeros(micrographs[0].shape)
-        for m in micrographs:
-            sum_micrograph += m
+    def correct_global_shift(self):
+        if not self.micrographs:
+            return
 
-        x_shifts = [0]*len(micrographs)
-        y_shifts = [0] * len(micrographs)
-        iter = 0
-        while True:
-            iter += 1
+        total_sum_img = np.sum(self.micrographs, axis=0)
+
+        x_shifts = [0] * len(self.micrographs)
+        y_shifts = [0] * len(self.micrographs)
+        iteration = 0
+        while iteration < 100:
+            iteration += 1
             max_change = 0
-            for i in range(len(micrographs)):
-                m = micrographs[i]
-                sum_micrograph_without_current = sum_micrograph - m
+
+            for i in range(len(self.micrographs)):
+                m = self.micrographs[i]
+                sum_without_current = total_sum_img - m
+
                 # TODO: apply B-factor??
 
-                x, y = self.calculate_shift(sum_micrograph_without_current, m)
+                x, y = self.calculate_shift(sum_without_current, m)
                 x_shifts[i] += x
                 y_shifts[i] += y
-                micrographs[i] = self.correct_for_shift(m, y, x)
-                sum_micrograph = sum_micrograph_without_current + micrographs[i]
+
+                self.micrographs[i] = self.correct_for_shift(m, y, x)
+                total_sum_img = sum_without_current + self.micrographs[i]
                 max_change = max(max_change, max(abs(x), abs(y)))
-            if max_change < 0.2 or iter >= 1:
+
+            if max_change < 0.2:
                 break
+
         return x_shifts, y_shifts
 
     def correct_shifts(self, micro, shifts):
@@ -77,7 +85,8 @@ class Movie:
         x -= (self.size / 2) - 1
         return x, y
 
-    def correct_for_shift(self, data, y_shift, x_shift):
+    @staticmethod
+    def correct_for_shift(data, y_shift, x_shift):
         if x_shift == 0 and y_shift == 0:
             return data
         return ndimage.interpolation.shift(data, (y_shift, x_shift))

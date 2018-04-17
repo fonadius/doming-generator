@@ -9,9 +9,12 @@ import os.path
 
 class Image:
 
-    def __init__(self):
+    def __init__(self, path=None, time_stamp=None):
         self.image_data = None
         self.time_stamp = None
+
+        if path and time_stamp:
+            self.load(path, time_stamp)
 
     def __getitem__(self, item):
         """Accessing image data. Item should be two element list-like object of integers and is interpreted as (x,y)"""
@@ -19,8 +22,8 @@ class Image:
 
     def get(self, x, y):
         """Accessing image data"""
-        x = max(min(x, self.width() - 1), 0)
-        y = max(min(y, self.height() - 1), 0)
+        if self.__outside_boundaries(x, y):
+            return 0.0
         return self.image_data[y][x]
 
     def __setitem__(self, key, value):
@@ -38,10 +41,6 @@ class Image:
 
     def __outside_boundaries(self, x, y):
         return x < 0 or x >= self.width() or y < 0 or y >= self.height()
-
-    def set_emtpy_image(self, shape, time_stamp):
-        self.image_data = np.zeros(shape, dtype=int)
-        self.time_stamp = time_stamp
 
     def initialize_with_image(self, other):
         self.image_data = np.copy(other.image_data)
@@ -68,7 +67,7 @@ class Image:
 
     def load_dummy(self, time_stamp):
         self.image_data = misc.face(True)
-        self.smaller()
+        self.shrink()
         self.time_stamp = time_stamp
 
     def load(self, path, time_stamp):
@@ -76,7 +75,7 @@ class Image:
         # self.smaller()
         self.time_stamp = time_stamp
 
-    def smaller(self):
+    def shrink(self):
         # self.image_data = skimage.transform.resize(self.image_data, (384, 512))
         self.image_data = skimage.transform.resize(self.image_data, (192, 256))
         # self.image_data = skimage.transform.resize(self.image_data, (96, 128))
