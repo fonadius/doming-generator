@@ -80,22 +80,12 @@ class Image:
         self.image_data = skimage.transform.resize(self.image_data, (192, 256))
         # self.image_data = skimage.transform.resize(self.image_data, (96, 128))
 
-    def save(self, folder_path):
+    def save(self, folder_path, suffix=""):
         if not self.is_initialized():
             raise RuntimeError("Cannot saved uninitialized image")
 
         if not os.path.exists(folder_path):
             raise RuntimeError("Folder does not exists: '" + folder_path + "'")
 
-        name = os.path.join(folder_path,str(self.time_stamp) + ".png")
-        misc.imsave(name, self.image_data)
-
-    def saver(self, folder_path):
-        if not self.is_initialized():
-            raise RuntimeError("Cannot saved uninitialized image")
-
-        if not os.path.exists(folder_path):
-            raise RuntimeError("Folder does not exists: '" + folder_path + "'")
-
-        name = os.path.join(folder_path,str(self.time_stamp) + "r.png")
+        name = os.path.join(folder_path,str(self.time_stamp) + suffix + ".png")
         misc.imsave(name, self.image_data)

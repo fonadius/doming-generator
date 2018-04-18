@@ -27,23 +27,26 @@ def restore_images(count):
     for i in range(count):
         movie.add(Image("./" + str(i) + ".png", i))
 
-    movie = Movie()
-    movie.initialize(micro)
-    global_shifts = movie.correct_global_shift(micro)
+    movie.correct_global_shift()
 
-    micro = movie.correct_for_shift(micro, global_shifts)
-
-    local_shifts = movie.calculate_local_shifts(micro)
+    local_shifts = movie.calculate_local_shifts()
+    # TODO: negate shifts
 
     model = DeformationModel()
-    model.initialize_model(local_shifts, False)
+    model.initialize_model(*local_shifts)
 
-    for m in micro:
-        img = model.apply_model(m, 5, 0)
-        img.saver("./")
+    for i in range(len(movie.micrographs)):
+        m = movie.micrographs[i]
+        movie.micrographs[i] = model.apply_model(m, m.time_stamp, 0)
+        movie.micrographs[i].save("./", "r")
+
+    movie.sum_images()
+    movie.save_sum("./")
 
 
 if __name__ == "__main__":
+    restore_images(10)
+
     # model = DeformationModel()
     # model.initialize_model_randomly()
     #

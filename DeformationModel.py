@@ -77,10 +77,7 @@ class DeformationModel:
 
         return shift
 
-    def initialize_model(self, shifts, positions, time_forward=True):
-        """Initialize model by least square approximation from provided 'shift_vectors'. To generate
-            :param shifts np.array with three elements [0] - x shift, [1] - y shift, [2] - time stamp"""
-
+    def initialize_model(self, positions, shifts_x, shifts_y):
         def f(pos, c):
             x = pos[0]
             y = pos[1]
