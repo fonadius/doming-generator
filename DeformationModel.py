@@ -24,8 +24,9 @@ class DeformationModel:
         if not self.initialized:
             raise RuntimeError("Model is not initialized.")
 
-        if (self.forward_model and t2 < t1) or (not self.forward_model and t1 < t2):
-            raise AttributeError("Model cannot go in this time direction.")
+        # if (self.forward_model and t2 < t1) or (not self.forward_model and t1 < t2):
+        #     raise AttributeError("Model cannot go in this time direction.")
+        # TODO:
 
         img = Image()
         img.initialize_with_zero(original.shape())
@@ -78,29 +79,28 @@ class DeformationModel:
         return shift
 
     def initialize_model(self, positions, shifts_x, shifts_y):
-        def f(pos, c):
-            x = pos[0]
-            y = pos[1]
-            t = pos[2]
-            t2 = t * t
-            t3 = t2 * t
+        shifts_x = list(map(lambda x: x*-1, shifts_x))
+        shifts_y = list(map(lambda x: x*-1, shifts_y))
 
+        def shift(x, y, t, c):
             return (c[0] + c[1] * x + c[2] * x * x + c[3] * y + c[4] * y * y + c[5] * x * y) * \
-                (c[6] * t + c[7] * t2 + c[8] * t3)
+                   (c[6] * t + c[7] * t * t + c[8] * t * t * t)
 
-        def f_list(pos, c):
-            return np.array(map(functools.partial(f, c=c), pos))
+        def list_shift(pos, c):
+            return np.array([shift(p[0], p[1], p[2], c) for p in pos])
 
-        def residual(coeffs, shifts, pos):
-            return shifts - f_list(pos, coeffs)
+        def residuals(c, shift, pos):
+            return shift - list_shift(pos, c)
 
-        c0 = [1] * 9
+        c0x = [1] * 9
+        res_x = optimize.leastsq(residuals, c0x, args=(shifts_x, positions))[0]
 
-        solX = optimize.leastsq(residual, c0, args=(shifts[0], positions))
+        c0y = [1] * 9
+        res_y = optimize.leastsq(residuals, c0y, args=(shifts_y, positions))[0]
 
-        y0 = [0, ] * 9
+        c = np.concatenate((res_x, res_y), axis=0).reshape(2,9)
 
-        solY = optimize.leastsq(residual, y0)[0]
+        self.coeffs = c
 
         self.initialize_model_randomly(time_forward=False)
 

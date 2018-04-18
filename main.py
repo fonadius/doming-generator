@@ -19,32 +19,46 @@ def deform_images(count):
         deformed_image.save("./")
         print("Done iteration ", i)
 
-    print("Run successful.")
+    print("Deformation successful.")
 
 
 def restore_images(count):
+    print("Starting restoration.")
     movie = Movie()
     for i in range(count):
-        movie.add(Image("./" + str(i) + ".png", i))
+        movie.add(Image("./0" + ".png", i))
+    # movie.dummy_initialize()
+    print("Images loaded.")
+
+    movie.dummy_move()
 
     movie.correct_global_shift()
 
-    local_shifts = movie.calculate_local_shifts()
-    # TODO: negate shifts
-
-    model = DeformationModel()
-    model.initialize_model(*local_shifts)
-
-    for i in range(len(movie.micrographs)):
-        m = movie.micrographs[i]
-        movie.micrographs[i] = model.apply_model(m, m.time_stamp, 0)
-        movie.micrographs[i].save("./", "r")
-
-    movie.sum_images()
     movie.save_sum("./")
+
+    # print("Global correction performed.")
+    #
+    # local_shifts = movie.calculate_local_shifts()
+    #
+    # print("Local shifts calculated")
+    #
+    # model = DeformationModel()
+    # model.initialize_model(*local_shifts)
+    #
+    # print("Deformation model calculated.")
+    #
+    # for i in range(len(movie.micrographs)):
+    #     m = movie.micrographs[i]
+    #     movie.micrographs[i] = model.apply_model(m, m.time_stamp, 0)
+    #     movie.micrographs[i].save("./", "r" + str(i))
+    #     print("Restored image " + str(i))
+    #
+    # movie.save_sum("./")
+    # print("Restoration finished.")
 
 
 if __name__ == "__main__":
+    # deform_images(10)
     restore_images(10)
 
     # model = DeformationModel()

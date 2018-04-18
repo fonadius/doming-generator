@@ -13,7 +13,7 @@ class Image:
         self.image_data = None
         self.time_stamp = None
 
-        if path and time_stamp:
+        if path is not None and time_stamp is not None:
             self.load(path, time_stamp)
 
     def __getitem__(self, item):
@@ -77,8 +77,8 @@ class Image:
 
     def shrink(self):
         # self.image_data = skimage.transform.resize(self.image_data, (384, 512))
-        self.image_data = skimage.transform.resize(self.image_data, (192, 256))
-        # self.image_data = skimage.transform.resize(self.image_data, (96, 128))
+        # self.image_data = skimage.transform.resize(self.image_data, (192, 256))
+        self.image_data = skimage.transform.resize(self.image_data, (96, 128))
 
     def save(self, folder_path, suffix=""):
         if not self.is_initialized():
