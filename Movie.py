@@ -19,17 +19,17 @@ class Movie:
         size = 16
         micrographs_raw_data = [np.zeros((size, size), dtype=int), np.zeros((size, size), dtype=int),
                                 np.zeros((size, size), dtype=int)]
-        micrographs_raw_data[0][8][10] = 256
+        micrographs_raw_data[0][10][5] = 256
         micrographs_raw_data[1][10][5] = 256
-        micrographs_raw_data[2][12][8] = 256
+        micrographs_raw_data[2][10][5] = 256
         self.micrographs = [Image() for i in micrographs_raw_data]
         for i in range(len(self.micrographs)):
             self.micrographs[i].image_data = micrographs_raw_data[i]
             self.micrographs[i].time_stamp = i
 
-    def dummy_move(self):
+    def add_dummy_global_shift(self):
         for i, m in enumerate(self.micrographs):
-            self.micrographs[i] = self.correct_for_shift(m, i * 5, 0)
+            self.micrographs[i].image_data = self.correct_for_shift(m.image_data, i*2, 0)
 
     @staticmethod
     def relative_shifts(raw_data):
@@ -53,7 +53,7 @@ class Movie:
                 x_shifts[i] += x
                 y_shifts[i] += y
 
-                raw_data[i] = Movie.correct_for_shift(current, y, x)
+                raw_data[i] = Movie.correct_for_shift(current, x, y)
                 total_sum = sum_without_current + raw_data[i]
                 max_change = max(max_change, max(abs(x), abs(y)))
 
@@ -71,7 +71,7 @@ class Movie:
         x_shifts, y_shifts = self.relative_shifts(raw_data)
 
         for i, m in enumerate(self.micrographs):
-            m.image_data = self.correct_for_shift(m.image_data, y_shifts[i], x_shifts[i])
+            m.image_data = self.correct_for_shift(m.image_data, x_shifts[i], y_shifts[i])
 
     @staticmethod
     def partition(raw_data):
@@ -140,7 +140,7 @@ class Movie:
 
     def sum_images(self):
         """Sums all images"""
-        return np.sum((m.image_data for m in self.micrographs), axis=0)
+        return np.sum((m.image_data for m in self.micrographs), axis=0)  # // len(self.micrographs)
 
     def save_sum(self, folder_path):
         img = Image()
@@ -149,7 +149,9 @@ class Movie:
         img.save(folder_path, "_total")
 
     @staticmethod
-    def correct_for_shift(data, y_shift, x_shift):
+    def correct_for_shift(data, x_shift, y_shift):
         if x_shift == 0 and y_shift == 0:
             return data
-        return ndimage.interpolation.shift(data, (y_shift, x_shift))
+        res = np.empty(data.shape)
+        ndimage.interpolation.shift(data, (y_shift, x_shift), res, cval=0)
+        return res

@@ -26,13 +26,22 @@ def restore_images(count):
     print("Starting restoration.")
     movie = Movie()
     for i in range(count):
-        movie.add(Image("./0" + ".png", i))
+        img = Image()
+        img.load_dummy(i)
+        movie.add(img)
     # movie.dummy_initialize()
     print("Images loaded.")
 
-    movie.dummy_move()
+    movie.add_dummy_global_shift()
 
-    movie.correct_global_shift()
+    for m in movie.micrographs:
+        m.save("./")
+
+    # movie.correct_global_shift()
+
+    for i, m in enumerate(movie.micrographs):
+        m.image_data = movie.correct_for_shift(m.image_data, -i, 0)
+        m.save("./", "r")
 
     movie.save_sum("./")
 
