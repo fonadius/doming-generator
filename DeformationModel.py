@@ -11,7 +11,7 @@ class DeformationModel:
        S(x,y,t) = (a_0 + a_1*x + a_2*x^2 + a_3*y + a_4*y^2 + a_5*x*y) * (a_6*t + a_7*t^2 + a_8*t^3)"""
 
     def __init__(self):
-        self.coeffs = np.zeros((18, 2))  # c_0 through c_17 (each coefficient is vector (x, y))
+        self.coeffs = np.zeros((18, 2))  # c_0 through c_17 (each coefficient is vector (y, x))
         self.forward_model = False  # Does the model describes movement forward or backward in time?
         self.initialized = False
 
@@ -39,26 +39,26 @@ class DeformationModel:
         def generate(y, x):
             """Function describing the transformed image"""
             # move to time t2
-            posx = x + self.calculate_shift(x, y, t2, 0) - self.calculate_shift(x, y, t1, 0)
-            posy = y + self.calculate_shift(x, y, t2, 1) - self.calculate_shift(x, y, t1, 1)
+            posx = x + self.calculate_shift(y, x, t2, 0) - self.calculate_shift(y, x, t1, 0)
+            posy = y + self.calculate_shift(y, x, t2, 1) - self.calculate_shift(y, x, t1, 1)
 
             x_left = int(posx)    # math.floor(pos[0])
             x_right = x_left + 1    # math.ceil(pos[0])
             y_down = int(posy)    # math.floor(pos[1])
             y_up = y_down + 1       # math.ceil(pos[1])
 
-            q11 = (x_left, y_up, original.get(x_left, y_up))
-            q21 = (x_left, y_down, original.get(x_left, y_down))
-            q12 = (x_right, y_up, original.get(x_right, y_up))
-            q22 = (x_right, y_down, original.get(x_right, y_down))
+            q11 = (y_up, x_left, original.get(y_up, x_left))
+            q21 = (y_down, x_left, original.get(y_down, x_left))
+            q12 = (y_up, x_right, original.get(y_up, x_right))
+            q22 = (y_down, x_right, original.get(y_down, x_right))
 
-            return MyMath.linear_interpolation(q11, q21, q12, q22, posx, posy)
+            return MyMath.linear_interpolation(q11, q21, q12, q22, posy, posx)
 
         img.image_data = np.fromfunction(np.vectorize(generate), original.image_data.shape)
 
         return img
 
-    def calculate_shift(self, x, y, t, axis):
+    def calculate_shift(self, y, x, t, axis):
         t2 = t*t
         t3 = t2*t
 
@@ -69,7 +69,7 @@ class DeformationModel:
         return shift
 
     @staticmethod
-    def calculate_shifts_from_coeffs(x, y, t, c):
+    def calculate_shifts_from_coeffs(y, x, t, c):
         t2 = t * t
         t3 = t2 * t
 
@@ -78,11 +78,11 @@ class DeformationModel:
 
         return shift
 
-    def initialize_model(self, positions, shifts_x, shifts_y):
-        shifts_x = list(map(lambda x: x*-1, shifts_x))
+    def initialize_model(self, positions, shifts_y, shifts_x):
         shifts_y = list(map(lambda x: x*-1, shifts_y))
+        shifts_x = list(map(lambda x: x*-1, shifts_x))
 
-        def shift(x, y, t, c):
+        def shift(y, x, t, c):
             return (c[0] + c[1] * x + c[2] * x * x + c[3] * y + c[4] * y * y + c[5] * x * y) * \
                    (c[6] * t + c[7] * t * t + c[8] * t * t * t)
 
@@ -92,13 +92,13 @@ class DeformationModel:
         def residuals(c, shift, pos):
             return shift - list_shift(pos, c)
 
-        c0x = [1] * 9
-        res_x = optimize.leastsq(residuals, c0x, args=(shifts_x, positions))[0]
-
         c0y = [1] * 9
         res_y = optimize.leastsq(residuals, c0y, args=(shifts_y, positions))[0]
 
-        c = np.concatenate((res_x, res_y), axis=0).reshape(2,9)
+        c0x = [1] * 9
+        res_x = optimize.leastsq(residuals, c0x, args=(shifts_x, positions))[0]
+
+        c = np.concatenate((res_y, res_x), axis=0).reshape(2, 9)  # TODO
 
         self.coeffs = c
 
@@ -121,7 +121,7 @@ class DeformationModel:
 
         # move the center of the doming into the middle of the picture
         if shape:
-            res[0][0] = -shape[1] / 2
-            res[1][0] = -shape[0] / 2
+            res[0][0] = -shape[0] / 2
+            res[1][0] = -shape[1] / 2
         return res
 

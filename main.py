@@ -32,15 +32,13 @@ def restore_images(count):
     # movie.dummy_initialize()
     print("Images loaded.")
 
-    movie.add_dummy_global_shift()
-
     for m in movie.micrographs:
         m.save("./")
 
     # movie.correct_global_shift()
 
     for i, m in enumerate(movie.micrographs):
-        m.image_data = movie.correct_for_shift(m.image_data, -i, 0)
+        m.image_data = movie.correct_for_shift(m.image_data, 0, -i)
         m.save("./", "r")
 
     movie.save_sum("./")

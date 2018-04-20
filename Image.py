@@ -17,29 +17,29 @@ class Image:
             self.load(path, time_stamp)
 
     def __getitem__(self, item):
-        """Accessing image data. Item should be two element list-like object of integers and is interpreted as (x,y)"""
+        """Accessing image data. Item should be two element list-like object of integers and is interpreted as (y, x)"""
         return self.get(item[0], item[1])
 
-    def get(self, x, y):
+    def get(self, y, x):
         """Accessing image data"""
-        if self.__outside_boundaries(x, y):
+        if self.__outside_boundaries(y, x):
             return 0.0
         return self.image_data[y][x]
 
     def __setitem__(self, key, value):
-        """Setting image data. Key should be two element lit-like object of integers and is interpreted as (x,y)"""
+        """Setting image data. Key should be two element lit-like object of integers and is interpreted as (y, x)"""
         self.set(key[0], key[1], value)
 
-    def set(self, x, y, value):
+    def set(self, y, x, value):
         """Setting image data."""
-        if self.__outside_boundaries(x, y):
+        if self.__outside_boundaries(y, x):
             # Do nothing, when trying to set element outside the image
-            warnings.warn("Trying to set element (x:" + str(value[0]) + ", y:" + str(value[1]) + ") outside the image.")
+            warnings.warn("Trying to set element (y:" + str(value[0]) + ", x:" + str(value[1]) + ") outside the image.")
             return
 
         self.image_data[y][x] = value
 
-    def __outside_boundaries(self, x, y):
+    def __outside_boundaries(self, y, x):
         return x < 0 or x >= self.width() or y < 0 or y >= self.height()
 
     def initialize_with_image(self, other):
@@ -53,7 +53,7 @@ class Image:
     def is_initialized(self):
         return self.time_stamp is not None and self.image_data is not None
 
-    def correct_for_shift(self, x_shift, y_shift):
+    def correct_for_shift(self, y_shift, x_shift):
         self.image_data = ndimage.interpolation.shift(self.image_data, (-y_shift, -x_shift))
 
     def shape(self):

@@ -2,7 +2,13 @@
   <dictionary name="fonadius">
     <words>
       <w>coeffs</w>
+      <w>hsplit</w>
+      <w>hsplited</w>
+      <w>hsplits</w>
       <w>micrographs</w>
+      <w>reindexed</w>
+      <w>vsplit</w>
+      <w>vsplits</w>
     </words>
   </dictionary>
 </component>

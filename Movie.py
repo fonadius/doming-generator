@@ -15,31 +15,15 @@ class Movie:
 
         self.micrographs.append(img)
 
-    def dummy_initialize(self):
-        size = 16
-        micrographs_raw_data = [np.zeros((size, size), dtype=int), np.zeros((size, size), dtype=int),
-                                np.zeros((size, size), dtype=int)]
-        micrographs_raw_data[0][10][5] = 256
-        micrographs_raw_data[1][10][5] = 256
-        micrographs_raw_data[2][10][5] = 256
-        self.micrographs = [Image() for i in micrographs_raw_data]
-        for i in range(len(self.micrographs)):
-            self.micrographs[i].image_data = micrographs_raw_data[i]
-            self.micrographs[i].time_stamp = i
-
-    def add_dummy_global_shift(self):
-        for i, m in enumerate(self.micrographs):
-            self.micrographs[i].image_data = self.correct_for_shift(m.image_data, i*2, 0)
-
     @staticmethod
     def relative_shifts(raw_data):
         """Calculates shifts for list of two dimensional data with each other."""
         total_sum = np.sum(raw_data, axis=0)
 
-        x_shifts = [0] * len(raw_data)
         y_shifts = [0] * len(raw_data)
+        x_shifts = [0] * len(raw_data)
         iteration = 0
-        while iteration < 2:  # TODO: how many iterations?
+        while iteration < 10000:  # TODO: how many iterations?
             iteration += 1
             max_change = 0
 
@@ -49,18 +33,18 @@ class Movie:
 
                 # TODO: apply B-factor??
 
-                x, y = Movie.one_on_one_shift(sum_without_current, current)
-                x_shifts[i] += x
+                y, x = Movie.one_on_one_shift(sum_without_current, current)
                 y_shifts[i] += y
+                x_shifts[i] += x
 
-                raw_data[i] = Movie.correct_for_shift(current, x, y)
+                raw_data[i] = Movie.correct_for_shift(current, y, x)
                 total_sum = sum_without_current + raw_data[i]
                 max_change = max(max_change, max(abs(x), abs(y)))
 
             if max_change < 0.2:  # TODO: what exact value?
                 break
 
-        return x_shifts, y_shifts
+        return y_shifts, x_shifts
 
     def correct_global_shift(self):
         if not self.micrographs:
@@ -68,10 +52,10 @@ class Movie:
 
         raw_data = [np.copy(m.image_data) for m in self.micrographs]
 
-        x_shifts, y_shifts = self.relative_shifts(raw_data)
+        y_shifts, x_shifts = self.relative_shifts(raw_data)
 
         for i, m in enumerate(self.micrographs):
-            m.image_data = self.correct_for_shift(m.image_data, x_shifts[i], y_shifts[i])
+            m.image_data = self.correct_for_shift(m.image_data, y_shifts[i], x_shifts[i])
 
     @staticmethod
     def partition(raw_data):
@@ -102,7 +86,7 @@ class Movie:
 
     def calculate_local_shifts(self):
         """
-        :return: ([(x,y,t)], [(shift_x, shift_y)])
+        :return: ([(y,x,t)], [(shift_y, shift_x)])
         """
         raw_data = [m.image_data for m in self.micrographs]
 
@@ -110,7 +94,7 @@ class Movie:
         height_step = shape[0] // 5
         width_step = shape[1] // 5
         positions = [
-            (ix * width_step + width_step // 2, iy * height_step + height_step // 2, self.micrographs[i].time_stamp)
+            (iy * width_step + width_step // 2, ix * height_step + height_step // 2, self.micrographs[i].time_stamp)
             for iy in range(5) for ix in range(5) for i in range(len(self.micrographs))]  # TODO: last values may little bit off
 
         reindexed = self.partition(raw_data)
@@ -120,23 +104,24 @@ class Movie:
         # We have [stack][axis][time] and want [stack * time](shift_x, shift_y)
         time = len(shifts[0][0])
         time_stack = time * len(shifts)
-        s_x = [None] * time_stack
         s_y = [None] * time_stack
+        s_x = [None] * time_stack
         for ti in range(time):
             for si in range(len(shifts)):
-                s_x[ti * len(shifts) + si] = shifts[si][0][ti]
-                s_y[ti * len(shifts) + si] = shifts[si][1][ti]
+                s_y[ti * len(shifts) + si] = shifts[si][0][ti]
+                s_x[ti * len(shifts) + si] = shifts[si][1][ti]
 
-        return positions, s_x, s_y
+        return positions, s_y, s_x
 
     @staticmethod
     def one_on_one_shift(main, template):
         """template is the one we want to move"""
-        corr = signal.correlate2d(main, template, boundary='symm', mode='same')
+        # TODO: doesn't work
+        corr = signal.fftconvolve(main, template, mode='same')
         y, x = np.unravel_index(np.argmax(corr), corr.shape)  # find the match
-        y -= (main.shape[0] / 2) - 1
-        x -= (main.shape[1] / 2) - 1
-        return x, y
+        y -= (main.shape[0] / 2)
+        x -= (main.shape[1] / 2)
+        return y, x
 
     def sum_images(self):
         """Sums all images"""
@@ -149,9 +134,28 @@ class Movie:
         img.save(folder_path, "_total")
 
     @staticmethod
-    def correct_for_shift(data, x_shift, y_shift):
+    def correct_for_shift(data, y_shift, x_shift):
+        """Corrects for y_shift and x_shift. Meaning it shifts provided data by -y_shift and -x_shift"""
         if x_shift == 0 and y_shift == 0:
             return data
-        res = np.empty(data.shape)
-        ndimage.interpolation.shift(data, (y_shift, x_shift), res, cval=0)
-        return res
+        return ndimage.interpolation.shift(data, (-y_shift, -x_shift), cval=0.0)
+
+
+if __name__ == "__main__":
+
+    def add_square(data, y, x, size):
+        for yi in range(size):
+            for xi in range(size):
+                data[y + yi][x + xi] = 1.0
+        return data
+
+    size = 8
+
+    data1 = np.zeros((size, size), dtype=float)
+    data2 = np.zeros((size, size), dtype=float)
+
+    data1 = add_square(data1, 3, 3, 2)
+    data1 = add_square(data1, 0, 1, 2)
+    data2 = add_square(data2, 5, 4, 2)
+
+    Movie.one_on_one_shift(data1, data2)
