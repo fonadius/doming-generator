@@ -115,12 +115,14 @@ class Movie:
 
     @staticmethod
     def one_on_one_shift(main, template):
-        """template is the one we want to move"""
-        # TODO: doesn't work
-        corr = signal.fftconvolve(main, template, mode='same')
+        """Calculates by how much is template shifted in relation to the main (template is doing the shifting)"""
+        template = template[::-1, ::-1]  # we are using convolution
+        corr = signal.fftconvolve(main, template)
         y, x = np.unravel_index(np.argmax(corr), corr.shape)  # find the match
-        y -= (main.shape[0] / 2)
-        x -= (main.shape[1] / 2)
+        # resulting array has size + 2 * size // 2 size and no movement means that highest peak is at size // 2
+        # coordinates (this works for odd sizes, even sizes are inherently imprecise so TODO:)
+        y = (corr.shape[0] // 2) - y
+        x = (corr.shape[1] // 2) - x
         return y, x
 
     def sum_images(self):
@@ -139,23 +141,3 @@ class Movie:
         if x_shift == 0 and y_shift == 0:
             return data
         return ndimage.interpolation.shift(data, (-y_shift, -x_shift), cval=0.0)
-
-
-if __name__ == "__main__":
-
-    def add_square(data, y, x, size):
-        for yi in range(size):
-            for xi in range(size):
-                data[y + yi][x + xi] = 1.0
-        return data
-
-    size = 8
-
-    data1 = np.zeros((size, size), dtype=float)
-    data2 = np.zeros((size, size), dtype=float)
-
-    data1 = add_square(data1, 3, 3, 2)
-    data1 = add_square(data1, 0, 1, 2)
-    data2 = add_square(data2, 5, 4, 2)
-
-    Movie.one_on_one_shift(data1, data2)
