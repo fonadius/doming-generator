@@ -21,6 +21,7 @@ def linear_interpolation(q11, q12, q21, q22, p_y, p_x):
         .................
         .................
         q21 ......... q22
+        (y increases from top to down, x increases from left to right)
         Values q_i are expected to be in strict orthogonal grid, where q11 and q21 have the same x coordinates (the same
         applies for q12 and q22) and q11 and q12 have the same y coordinates (the same applies for q21 and q22).
 
@@ -36,20 +37,22 @@ def linear_interpolation(q11, q12, q21, q22, p_y, p_x):
         p1 = q11[2]
         p2 = q21[2]
     else:
-        rat_left = (p_x - q11[1]) / (q12[1] - q11[1])
-        rat_right = (q12[1] - p_x) / (q12[1] - q11[1])
+        diffx = (q12[1] - q11[1])
+        rat1 = (q12[1] - p_x) / diffx
+        rat2 = (p_x - q11[1]) / diffx
 
-        p1 = q11[2] * rat_left + q12[2] * rat_right
-        p2 = q21[2] * rat_left + q22[2] * rat_right
+        p1 = q11[2] * rat1 + q12[2] * rat2
+        p2 = q21[2] * rat1 + q22[2] * rat2
 
     # y interpolation
     if q11[0] == q21[0]:
         p = p1
     else:
-        rat_top = (p_y - q11[0]) / (q21[0] - q11[0])
-        rat_down = (q21[0] - p_y) / (q21[0] - q11[0])
+        diffy = (q21[0] - q11[0])
+        rat1 = (q21[0] - p_y) / diffy
+        rat2 = (p_y - q11[0]) / diffy
 
-        p = p1 * rat_top + p2 * rat_down
+        p = p1 * rat1 + p2 * rat2
 
     return p
 
