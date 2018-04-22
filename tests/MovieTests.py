@@ -153,6 +153,79 @@ class ShiftCorrectionTest(unittest.TestCase):
         self.assertEqual(peak_count, square_size*square_size)
 
 
+class LocalShiftsTest(unittest.TestCase):
+
+    def partitioning_test(self, size_y, size_x):
+        data = [np.zeros((size_y, size_x), dtype=float) for d in range(4)]
+
+        # Each partition contains values of the same value more specifically `1000 * partition_index + time_index`
+        # where partition_index start from 1 and time index is index in data
+        # Plus when the axis is no dividable by 5, the remainder is spread from the start and size of each partition
+        # there is increased by one until the required size is met.
+        part_y_sizes = [(size_y // 5) for i in range(5)]
+        part_x_sizes = [(size_x // 5) for i in range(5)]
+        remainder_y = size_y - (size_y // 5) * 5
+        remainder_x = size_x - (size_x // 5) * 5
+        for i in range(remainder_y):
+            part_y_sizes[i] += 1
+        for i in range(remainder_x):
+            part_x_sizes[i] += 1
+
+        index_y = 0
+        for part_y_index, curr_y_size in enumerate(part_y_sizes):
+            for iy in range(curr_y_size):
+                index_x = 0
+                for part_x_index, curr_x_size in enumerate(part_x_sizes):
+                    for ix in range(curr_x_size):
+                        for i in range(len(data)):
+                            data[i][index_y][index_x] = (part_y_index * 5 + part_x_index + 1) * 1000 + i
+                        index_x += 1
+                index_y += 1
+
+        res = Movie.partition(data)
+
+        # check correct dimensions
+        self.assertEqual(len(res), 25)
+        for stack_index, stack in enumerate(res):
+            self.assertEqual(len(stack), len(data))
+            y_index = stack_index // 5
+            x_index = stack_index - (y_index * 5)
+            for time in stack:
+                self.assertEqual(time.shape, (part_y_sizes[y_index], part_x_sizes[x_index]))
+
+        # check correct values
+        for stack_index, stack in enumerate(res):
+            for time_index, time in enumerate(stack):
+                array = np.ones(time.shape)
+                array = (array * (stack_index + 1) * 1000) + time_index
+                self.assertTrue(np.array_equal(array, time))
+
+    def test_partitioning_regular(self):
+        """can be divided regularly (i.e. each dimension is dividable by 5"""
+        self.partitioning_test(20, 15)
+
+        self.partitioning_test(45, 5)
+
+        self.partitioning_test(5, 5)
+
+        self.partitioning_test(20, 50)
+
+    def test_partitioning_irregular(self):
+        """dimensions are not dividable by 5"""
+        self.partitioning_test(21, 17)
+
+        self.partitioning_test(37, 40)
+
+        self.partitioning_test(11, 34)
+
+        self.partitioning_test(90, 67)
+
+        self.partitioning_test(6, 89)
+
+    def test_calculate_local_shifts(self):
+        pass
+
+
 if __name__ == "__main__":
     unittest.main()
 

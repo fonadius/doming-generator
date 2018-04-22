@@ -59,26 +59,46 @@ class Movie:
 
     @staticmethod
     def partition(raw_data):
-        """Returns partitioned micrographs i.e. each micrograph is divided into 25 partitions.
-        And then the result is [stack_index \n <0,24>][micrograph][y][x]"""
-        size = 5
-        equal_hsplit = raw_data[0].shape[1] // size
-        hsplits = [equal_hsplit * i for i in range(1, size)]
-        equal_vsplit = raw_data[0].shape[0] // size
-        vsplits = [equal_vsplit * i for i in range(1, size)]
-        # TODO: do all of this in some nice numpy way???
+        """Returns partitioned micrographs i.e. each micrograph is divided into 25 partitions. When it is not possible
+        to divide axis into 5 equal partitions several first partitions are expanded by one item.
+        :param raw_data list of micrographs [micrograph][y][x]
+        :return [stack_index \in <0,24>][micrograph][y][x]"""
+        partition_size = 5
+        # calculate where should the micrograph images be divided into partitions along horizontal and vertical axis
+        equal_hsplit = raw_data[0].shape[1] // partition_size
+        hsplits = [equal_hsplit * i for i in range(1, partition_size)]
+        equal_vsplit = raw_data[0].shape[0] // partition_size
+        vsplits = [equal_vsplit * i for i in range(1, partition_size)]
 
+        # if axis are not dividable by partition_size, then resize first few to accommodate the whole micrograph
+        remainder_h = raw_data[0].shape[1] - equal_hsplit * partition_size
+        remainder_v = raw_data[0].shape[0] - equal_vsplit * partition_size
+        if remainder_h > 0:
+            for i in range(remainder_h):
+                hsplits[i] += (i + 1)
+            for i in range(partition_size - 1):
+                if i >= remainder_h:
+                    hsplits[i] += remainder_h
+        if remainder_v > 0:
+            for i in range(remainder_v):
+                vsplits[i] += (i + 1)
+            for i in range(partition_size - 1):
+                if i >= remainder_v:
+                    vsplits[i] += remainder_v
+
+        # split all micrographs into partitions
         hsplited = [np.hsplit(l, hsplits) for l in raw_data]
         partitions_list = []
         for m in hsplited:
             partitions_list.append([np.vsplit(l, vsplits) for l in m])
 
+        # reorder partitions
         # Now we have [micrograph][stack_index_y][stack_index_x][y][x]
         # and want [micrograph][stack_index \in <0,24>][y][x]
-        partitions_list = [[micro[iy][ix] for ix in range(size) for iy in range(size)]
+        partitions_list = [[micro[iy][ix] for ix in range(partition_size) for iy in range(partition_size)]
                            for micro in partitions_list]
         # we want [stack_index][micrograph][y][x]
-        res = [[] for i in range(size*size)]
+        res = [[] for i in range(partition_size*partition_size)]
         for micro in partitions_list:
             for i, s in enumerate(micro):
                 res[i].append(s)
@@ -95,7 +115,7 @@ class Movie:
         width_step = shape[1] // 5
         positions = [
             (iy * width_step + width_step // 2, ix * height_step + height_step // 2, self.micrographs[i].time_stamp)
-            for iy in range(5) for ix in range(5) for i in range(len(self.micrographs))]  # TODO: last values may little bit off
+            for iy in range(5) for ix in range(5) for i in range(len(self.micrographs))]  # TODO: last values may be little bit off
 
         reindexed = self.partition(raw_data)
 
