@@ -3,7 +3,6 @@ import numpy as np
 import MyMath
 from Image import Image
 from scipy import optimize
-import functools
 
 
 class DeformationModel:
@@ -12,8 +11,6 @@ class DeformationModel:
 
     def __init__(self):
         self.coeffs = np.zeros((18, 2))  # c_0 through c_17 (each coefficient is vector (y, x))
-        self.forward_model = False  # Does the model describes movement forward or backward in time?
-        self.initialized = False
 
     def apply_model(self, original, t1, t2):
         """Applies model and calculates other time position
@@ -21,13 +18,6 @@ class DeformationModel:
             :param t1 time stamp of the 'original'
             :param t2 time stamp to which should the model move the 'original'
             :returns numpy array with original image in time t2 base on the model"""
-        if not self.initialized:
-            raise RuntimeError("Model is not initialized.")
-
-        # if (self.forward_model and t2 < t1) or (not self.forward_model and t1 < t2):
-        #     raise AttributeError("Model cannot go in this time direction.")
-        # TODO:
-
         img = Image()
         img.initialize_with_zero(original.shape())
         img.time_stamp = t2
@@ -59,14 +49,7 @@ class DeformationModel:
         return img
 
     def calculate_shift(self, y, x, t, axis):
-        t2 = t*t
-        t3 = t2*t
-
-        c = self.coeffs[axis]
-        shift = (c[0] + c[1] * x + c[2] * x * x + c[3] * y + c[4] * y * y + c[5] * x * y) * \
-                (c[6] * t + c[7] * t2 + c[8] * t3)
-
-        return shift
+        return DeformationModel.calculate_shifts_from_coeffs(y, x, t, self.coeffs[axis])
 
     @staticmethod
     def calculate_shifts_from_coeffs(y, x, t, c):
@@ -82,12 +65,8 @@ class DeformationModel:
         shifts_y = list(map(lambda x: x*-1, shifts_y))
         shifts_x = list(map(lambda x: x*-1, shifts_x))
 
-        def shift(y, x, t, c):
-            return (c[0] + c[1] * x + c[2] * x * x + c[3] * y + c[4] * y * y + c[5] * x * y) * \
-                   (c[6] * t + c[7] * t * t + c[8] * t * t * t)
-
         def list_shift(pos, c):
-            return np.array([shift(p[0], p[1], p[2], c) for p in pos])
+            return np.array([DeformationModel.calculate_shifts_from_coeffs(p[0], p[1], p[2], c) for p in pos])
 
         def residuals(c, shift, pos):
             return shift - list_shift(pos, c)
@@ -98,17 +77,13 @@ class DeformationModel:
         c0x = [1] * 9
         res_x = optimize.leastsq(residuals, c0x, args=(shifts_x, positions))[0]
 
-        c = np.concatenate((res_y, res_x), axis=0).reshape(2, 9)  # TODO
+        result = np.concatenate((res_y, res_x), axis=0).reshape(2, 9)  # TODO
 
-        self.coeffs = c
+        self.coeffs = result
 
-        self.initialize_model_randomly(time_forward=False)
-
-    def initialize_model_randomly(self, shape=None, time_forward=True):
+    def initialize_model_randomly(self, shape=None):
         """Randomly generates model with reasonable coefficients."""
         self.coeffs = self.generate_random_coeffs(shape)
-        self.forward_model = time_forward
-        self.initialized = True
 
     @staticmethod
     def generate_random_coeffs(shape=None):
