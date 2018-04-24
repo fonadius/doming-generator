@@ -65,14 +65,18 @@ class Image:
     def height(self):
         return self.image_data.shape[0]
 
-    def load_dummy(self, time_stamp, add_grid=True, grid_size=5, grid_spacing=20):
+    def add_grid(self, grid_size=2, grid_spacing=20):
+        for yi in range(self.image_data.shape[0]):
+            for xi in range(self.image_data.shape[1]):
+                if (xi + grid_spacing) % (grid_spacing + grid_size) < grid_size or \
+                        (yi + grid_spacing) % (grid_spacing + grid_size) < grid_size:
+                    self.image_data[yi][xi] = 0.0
+
+    def load_dummy(self, time_stamp, add_grid=True, grid_size=2, grid_spacing=20):
         self.image_data = misc.face(True)
         self.shrink()
         if add_grid:
-            for yi in range(self.image_data.shape[0]):
-                for xi in range(self.image_data.shape[1]):
-                    if xi % (grid_spacing + grid_size) < grid_size or yi % (grid_spacing + grid_size) < grid_size:
-                        self.image_data[iy][ix] = 0.0
+            self.add_grid(grid_size, grid_spacing)
         self.time_stamp = time_stamp
 
     def load(self, path, time_stamp):
@@ -82,8 +86,8 @@ class Image:
 
     def shrink(self):
         # self.image_data = skimage.transform.resize(self.image_data, (384, 512))
-        # self.image_data = skimage.transform.resize(self.image_data, (192, 256))
-        self.image_data = skimage.transform.resize(self.image_data, (96, 128))
+        self.image_data = skimage.transform.resize(self.image_data, (192, 256))
+        # self.image_data = skimage.transform.resize(self.image_data, (96, 128))
 
     def save(self, folder_path, suffix=""):
         if not self.is_initialized():
