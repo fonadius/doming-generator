@@ -10,8 +10,14 @@ class Movie:
         self.micrographs = []
 
     def add(self, img, data_check=True):
-        if data_check and any(m.time_stamp == img.time_stamp for m in self.micrographs):
-            raise RuntimeError("Movie contains two micrographs with equal time stamps.")
+        if data_check
+            if any(m.time_stamp == img.time_stamp for m in self.micrographs):
+                raise RuntimeError("Movie contains two micrographs with equal time stamps.")
+
+            if any(m.image_data.shape != img.shape for m in self.micrographs):
+                raise RuntimeError("Movie contains micrographs with different shapes.")
+                # TODO: maybe this should be possible?
+
 
         self.micrographs.append(img)
 
@@ -23,7 +29,7 @@ class Movie:
         y_shifts = [0] * len(raw_data)
         x_shifts = [0] * len(raw_data)
         iteration = 0
-        while iteration < 10000:  # TODO: how many iterations?
+        while iteration < 10:  # TODO: how many iterations?
             iteration += 1
             max_change = 0
 
@@ -58,33 +64,35 @@ class Movie:
             m.image_data = self.correct_for_shift(m.image_data, y_shifts[i], x_shifts[i])
 
     @staticmethod
+    def partitions_sizes(shape, partition_axis_count=5):
+        regular = (shape[0] // partition_axis_count,
+                   shape[1] // partition_axis_count)
+        sizes = ([regular[0]] * partition_axis_count,
+                 [regular[1]] * partition_axis_count)
+
+        def add(size, reminder):
+            return [s + 1 if i < reminder else s for i, s in enumerate(size)]
+
+        result = (add(sizes[0], shape[0] - regular[0] * partition_axis_count),
+                  add(sizes[1], shape[1] - regular[1] * partition_axis_count))
+
+        return result
+
+    @staticmethod
     def partition(raw_data):
         """Returns partitioned micrographs i.e. each micrograph is divided into 25 partitions. When it is not possible
         to divide axis into 5 equal partitions several first partitions are expanded by one item.
         :param raw_data list of micrographs [micrograph][y][x]
         :return [stack_index \in <0,24>][micrograph][y][x]"""
         partition_size = 5
-        # calculate where should the micrograph images be divided into partitions along horizontal and vertical axis
-        equal_hsplit = raw_data[0].shape[1] // partition_size
-        hsplits = [equal_hsplit * i for i in range(1, partition_size)]
-        equal_vsplit = raw_data[0].shape[0] // partition_size
-        vsplits = [equal_vsplit * i for i in range(1, partition_size)]
 
-        # if axis are not dividable by partition_size, then resize first few to accommodate the whole micrograph
-        remainder_h = raw_data[0].shape[1] - equal_hsplit * partition_size
-        remainder_v = raw_data[0].shape[0] - equal_vsplit * partition_size
-        if remainder_h > 0:
-            for i in range(remainder_h):
-                hsplits[i] += (i + 1)
-            for i in range(partition_size - 1):
-                if i >= remainder_h:
-                    hsplits[i] += remainder_h
-        if remainder_v > 0:
-            for i in range(remainder_v):
-                vsplits[i] += (i + 1)
-            for i in range(partition_size - 1):
-                if i >= remainder_v:
-                    vsplits[i] += remainder_v
+        # calculate where should the micrograph images be divided into partitions along horizontal and vertical axis
+        def size_to_splits(size):
+            return [sum(size[:i]) for i in range(len(size))][1:]
+        sizes = Movie.partitions_sizes(raw_data[0].shape)
+
+        vsplits = size_to_splits(sizes[0])
+        hsplits = size_to_splits(sizes[1])
 
         # split all micrographs into partitions
         hsplited = [np.hsplit(l, hsplits) for l in raw_data]
@@ -108,18 +116,13 @@ class Movie:
         """
         :return: ([(y,x,t)], [(shift_y, shift_x)])
         """
-        raw_data = [m.image_data for m in self.micrographs]
+        raw_data = (m.image_data for m in self.micrographs)
+        partitions = self.partition(raw_data)
 
-        shape = self.micrographs[0].shape()
-        height_step = shape[0] // 5
-        width_step = shape[1] // 5
-        positions = [
-            (iy * width_step + width_step // 2, ix * height_step + height_step // 2, self.micrographs[i].time_stamp)
-            for iy in range(5) for ix in range(5) for i in range(len(self.micrographs))]  # TODO: last values may be little bit off
+        center_pos = [(sum(partitions), x, m.time_stamp)
+                     for part_index in partitions for m in self.micrographs]
 
-        reindexed = self.partition(raw_data)
-
-        data = [np.copy(m) for m in reindexed]
+        data = [np.copy(m) for m in partitions]
         shifts = [self.relative_shifts(stack) for stack in data]
         # We have [stack][axis][time] and want [stack * time](shift_x, shift_y)
         time = len(shifts[0][0])
@@ -131,7 +134,7 @@ class Movie:
                 s_y[ti * len(shifts) + si] = shifts[si][0][ti]
                 s_x[ti * len(shifts) + si] = shifts[si][1][ti]
 
-        return positions, s_y, s_x
+        return center_pos, s_y, s_x
 
     @staticmethod
     def one_on_one_shift(main, template):
