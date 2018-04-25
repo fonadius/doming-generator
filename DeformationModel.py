@@ -30,23 +30,24 @@ class DeformationModel:
         calc_shift_fnc = self.calculate_shift
         orig_get_fnc = original.get
         inetrp_fnc = MyMath.linear_interpolation
+
         def generate(y, x):
             """Function describing the transformed image"""
             # move to time t2
-            posx = x + calc_shift_fnc(y, x, t2, 0) - calc_shift_fnc(y, x, t1, 0)
-            posy = y + calc_shift_fnc(y, x, t2, 1) - calc_shift_fnc(y, x, t1, 1)
+            posy = y + calc_shift_fnc(y, x, t2, 0) - calc_shift_fnc(y, x, t1, 0)
+            posx = x + calc_shift_fnc(y, x, t2, 1) - calc_shift_fnc(y, x, t1, 1)
 
             x_left = int(posx)   # math.floor(pos[0])
             x_right = x_left + 1    # math.ceil(pos[0])
             y_down = int(posy)    # math.floor(pos[1])
             y_up = y_down + 1       # math.ceil(pos[1])
 
-            q11 = (y_up, x_left, orig_get_fnc(y_up, x_left, resolution_scaling_factor))
-            q21 = (y_down, x_left, orig_get_fnc(y_down, x_left, resolution_scaling_factor))
-            q12 = (y_up, x_right, orig_get_fnc(y_up, x_right, resolution_scaling_factor))
-            q22 = (y_down, x_right, orig_get_fnc(y_down, x_right, resolution_scaling_factor))
+            v11 = orig_get_fnc(y_down, x_left, resolution_scaling_factor)
+            v12 = orig_get_fnc(y_down, x_right, resolution_scaling_factor)
+            v21 = orig_get_fnc(y_up, x_left, resolution_scaling_factor)
+            v22 = orig_get_fnc(y_up, x_right, resolution_scaling_factor)
 
-            return inetrp_fnc(q11, q21, q12, q22, posy, posx)
+            return inetrp_fnc(y_down, x_left, y_up, x_right, v11, v12, v21, v22, posy, posx)
 
         img.image_data = np.fromfunction(np.vectorize(generate),
                                          (original.shape()[0] * resolution_scaling_factor,
