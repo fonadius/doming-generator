@@ -182,7 +182,7 @@ class LocalShiftsTest(unittest.TestCase):
                         index_x += 1
                 index_y += 1
 
-        res = Movie.partition(data)
+        res = Movie().partition(data)
 
         # check correct dimensions
         self.assertEqual(len(res), 25)
@@ -246,19 +246,17 @@ class LocalShiftsTest(unittest.TestCase):
         pos, s_y, s_x = movie.calculate_local_shifts()
 
         # check positions
-        # self.assertEqual(len(data) * 25, len(pos))
-        # for t in range(len(data)):
-        #     for i, p in enumerate(pos):
-        #         # self.assertEqual(p[2], t)  # check time
-        #         stack_index = i % 25
-        #         stack_x_index = stack_index % 5
-        #         stack_y_index = stack_index // 5
-        #         y_index = sum((v for v in part_y_sizes[:max(stack_y_index - 1, 0)]))
-        #         y_index += part_y_sizes[y_index] // 2
-        #         x_index = sum((v for v in part_x_sizes[:max(stack_x_index - 1, 0)]))
-        #         x_index += part_x_sizes[x_index] // 2
-        #         # self.assertEqual(y_index, p[0])
-        #         # self.assertEqual(x_index, p[1])
+        self.assertEqual(len(data) * 25, len(pos))
+        for ip, p in enumerate(pos):
+            time = ip // 25
+            self.assertEqual(p[2], time)  # check time
+            stack_index = ip % 25
+            stack_x_index = stack_index % 5
+            stack_y_index = stack_index // 5
+            y_index = sum((v for v in part_y_sizes[:stack_y_index]))
+            x_index = sum((v for v in part_x_sizes[:stack_x_index]))
+            self.assertEqual(y_index + part_y_sizes[stack_y_index] // 2, p[0])
+            self.assertEqual(x_index + part_x_sizes[stack_x_index] // 2, p[1])
 
         self.assertTrue(True)
 

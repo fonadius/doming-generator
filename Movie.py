@@ -8,16 +8,16 @@ class Movie:
 
     def __init__(self):
         self.micrographs = []
+        self.partitions_size = 5
 
     def add(self, img, data_check=True):
-        if data_check
+        if data_check:
             if any(m.time_stamp == img.time_stamp for m in self.micrographs):
                 raise RuntimeError("Movie contains two micrographs with equal time stamps.")
 
-            if any(m.image_data.shape != img.shape for m in self.micrographs):
+            if any(m.shape() != img.shape() for m in self.micrographs):
                 raise RuntimeError("Movie contains micrographs with different shapes.")
                 # TODO: maybe this should be possible?
-
 
         self.micrographs.append(img)
 
@@ -78,18 +78,17 @@ class Movie:
 
         return result
 
-    @staticmethod
-    def partition(raw_data):
+    def partition(self, raw_data):
         """Returns partitioned micrographs i.e. each micrograph is divided into 25 partitions. When it is not possible
         to divide axis into 5 equal partitions several first partitions are expanded by one item.
         :param raw_data list of micrographs [micrograph][y][x]
         :return [stack_index \in <0,24>][micrograph][y][x]"""
-        partition_size = 5
+        partition_size = self.partitions_size
 
         # calculate where should the micrograph images be divided into partitions along horizontal and vertical axis
         def size_to_splits(size):
             return [sum(size[:i]) for i in range(len(size))][1:]
-        sizes = Movie.partitions_sizes(raw_data[0].shape)
+        sizes = self.partitions_sizes(raw_data[0].shape)
 
         vsplits = size_to_splits(sizes[0])
         hsplits = size_to_splits(sizes[1])
@@ -116,12 +115,28 @@ class Movie:
         """
         :return: ([(y,x,t)], [(shift_y, shift_x)])
         """
-        raw_data = (m.image_data for m in self.micrographs)
+        psize = self.partitions_size
+        raw_data = [m.image_data for m in self.micrographs]
         partitions = self.partition(raw_data)
 
-        center_pos = [(sum(partitions), x, m.time_stamp)
-                     for part_index in partitions for m in self.micrographs]
+        # calculate positions
+        center_pos = []
+        for it in range(len(raw_data)):
+            last = [0, 0]
+            for ip, p in enumerate(partitions):
+                size_y = p[it].shape[0]
+                size_x = p[it].shape[1]
 
+                center_pos.append((last[0] + size_y // 2,
+                                   last[1] + size_x // 2,
+                                   self.micrographs[it].time_stamp))
+
+                last[1] += size_x
+                if (ip + 1) % psize == 0:  # in next iteration is a new line
+                    last[1] = 0
+                    last[0] += size_y
+
+        # calculate shifts
         data = [np.copy(m) for m in partitions]
         shifts = [self.relative_shifts(stack) for stack in data]
         # We have [stack][axis][time] and want [stack * time](shift_x, shift_y)
