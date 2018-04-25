@@ -2,7 +2,8 @@
 import numpy as np
 import MyMath
 from Image import Image
-from scipy import optimize
+from scipy import optimize, signal
+import math
 
 
 class DeformationModel:
@@ -12,39 +13,48 @@ class DeformationModel:
     def __init__(self):
         self.coeffs = np.zeros((18, 2))  # c_0 through c_17 (each coefficient is vector (y, x))
 
-    def apply_model(self, original, t1, t2):
+    def apply_model(self, original, t1, t2, resolution_scaling_factor=1):
         """Applies model and calculates other time position
             :param original numpy array representing an image in the time t1
             :param t1 time stamp of the 'original'
             :param t2 time stamp to which should the model move the 'original'
+            :param resolution_scaling_factor in how much grater resolution should the deformation be calculated
             :returns numpy array with original image in time t2 base on the model"""
         img = Image()
-        img.initialize_with_zero(original.shape())
         img.time_stamp = t2
 
         if t1 == t2:
             img.initialize_with_image(original)
             return img
 
+        calc_shift_fnc = self.calculate_shift
+        orig_get_fnc = original.get
+        inetrp_fnc = MyMath.linear_interpolation
         def generate(y, x):
             """Function describing the transformed image"""
             # move to time t2
-            posx = x + self.calculate_shift(y, x, t2, 0) - self.calculate_shift(y, x, t1, 0)
-            posy = y + self.calculate_shift(y, x, t2, 1) - self.calculate_shift(y, x, t1, 1)
+            posx = x + calc_shift_fnc(y, x, t2, 0) - calc_shift_fnc(y, x, t1, 0)
+            posy = y + calc_shift_fnc(y, x, t2, 1) - calc_shift_fnc(y, x, t1, 1)
 
-            x_left = int(posx)    # math.floor(pos[0])
+            x_left = int(posx)   # math.floor(pos[0])
             x_right = x_left + 1    # math.ceil(pos[0])
             y_down = int(posy)    # math.floor(pos[1])
             y_up = y_down + 1       # math.ceil(pos[1])
 
-            q11 = (y_up, x_left, original.get(y_up, x_left))
-            q21 = (y_down, x_left, original.get(y_down, x_left))
-            q12 = (y_up, x_right, original.get(y_up, x_right))
-            q22 = (y_down, x_right, original.get(y_down, x_right))
+            q11 = (y_up, x_left, orig_get_fnc(y_up, x_left, resolution_scaling_factor))
+            q21 = (y_down, x_left, orig_get_fnc(y_down, x_left, resolution_scaling_factor))
+            q12 = (y_up, x_right, orig_get_fnc(y_up, x_right, resolution_scaling_factor))
+            q22 = (y_down, x_right, orig_get_fnc(y_down, x_right, resolution_scaling_factor))
 
-            return MyMath.linear_interpolation(q11, q21, q12, q22, posy, posx)
+            return inetrp_fnc(q11, q21, q12, q22, posy, posx)
 
-        img.image_data = np.fromfunction(np.vectorize(generate), original.image_data.shape)
+        img.image_data = np.fromfunction(np.vectorize(generate),
+                                         (original.shape()[0] * resolution_scaling_factor,
+                                          original.shape()[1] * resolution_scaling_factor))
+
+        if resolution_scaling_factor != 1:
+            img.image_data = signal.decimate(signal.decimate(img.image_data, resolution_scaling_factor),
+                                             resolution_scaling_factor, axis=0)
 
         return img
 
@@ -77,7 +87,7 @@ class DeformationModel:
         c0x = [1] * 9
         res_x = optimize.leastsq(residuals, c0x, args=(shifts_x, positions))[0]
 
-        result = np.concatenate((res_y, res_x), axis=0).reshape(2, 9)  # TODO
+        result = np.concatenate((res_y, res_x), axis=0).reshape(2, 9)
 
         self.coeffs = result
 
@@ -94,9 +104,8 @@ class DeformationModel:
         scale = np.ones((2, 9)) / 1000
         res = flt * scale
 
-        # move the center of the doming into the middle of the picture
-        if shape:
-            res[0][0] = -shape[0] / 2
-            res[1][0] = -shape[1] / 2
+        res[0][8] = res[0][8] / 100
+        res[1][8] = res[1][8] / 100
+
         return res
 

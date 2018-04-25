@@ -20,8 +20,10 @@ class Image:
         """Accessing image data. Item should be two element list-like object of integers and is interpreted as (y, x)"""
         return self.get(item[0], item[1])
 
-    def get(self, y, x):
+    def get(self, y, x, resolution_scaling_factor=1):
         """Accessing image data"""
+        y = y // resolution_scaling_factor
+        x = x // resolution_scaling_factor
         if self.__outside_boundaries(y, x):
             return 0.0
         return self.image_data[y][x]
@@ -46,8 +48,8 @@ class Image:
         self.image_data = np.copy(other.image_data)
         self.time_stamp = other.time_stamp
 
-    def initialize_with_zero(self, shape):
-        self.image_data = np.zeros(shape)
+    def initialize_empty(self, shape):
+        self.image_data = np.empty(shape)
         self.time_stamp = 0
 
     def is_initialized(self):
@@ -86,15 +88,19 @@ class Image:
 
     def shrink(self):
         # self.image_data = skimage.transform.resize(self.image_data, (384, 512))
-        self.image_data = skimage.transform.resize(self.image_data, (192, 256))
+        self.image_data = skimage.transform.resize(self.image_data, (195, 255))
         # self.image_data = skimage.transform.resize(self.image_data, (96, 128))
 
-    def save(self, folder_path, suffix=""):
+    def save(self, folder_path, suffix="", name=None):
         if not self.is_initialized():
             raise RuntimeError("Cannot saved uninitialized image")
 
         if not os.path.exists(folder_path):
             raise RuntimeError("Folder does not exists: '" + folder_path + "'")
 
-        name = os.path.join(folder_path,str(self.time_stamp) + suffix + ".png")
+        if name is None:
+            name = os.path.join(folder_path, str(self.time_stamp) + suffix + ".png")
+        else:
+            name = os.path.join(folder_path, name + ".png")
+
         misc.imsave(name, self.image_data)
