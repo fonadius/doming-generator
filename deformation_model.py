@@ -1,7 +1,7 @@
 """Remembers model of deformation and allows its generation"""
 import numpy as np
-import MyMath
-from Image import Image
+import my_math
+from image import Image
 from scipy import optimize, signal
 import math
 
@@ -29,7 +29,7 @@ class DeformationModel:
 
         calc_shift_fnc = self.calculate_shift
         orig_get_fnc = original.get
-        inetrp_fnc = MyMath.linear_interpolation
+        inetrp_fnc = my_math.linear_interpolation
 
         def generate(y, x):
             """Function describing the transformed image"""

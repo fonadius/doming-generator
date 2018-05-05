@@ -1,5 +1,5 @@
 import unittest
-import MyMath
+import my_math
 
 
 class LinearInterpolationTest(unittest.TestCase):
@@ -23,7 +23,7 @@ class LinearInterpolationTest(unittest.TestCase):
         ]
 
         for item in known_values:
-            self.assertAlmostEqual(MyMath.linear_interpolation(
+            self.assertAlmostEqual(my_math.linear_interpolation(
                 *(item[:-1])
             ), item[-1])
 

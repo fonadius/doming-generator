@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import signal
 from scipy import ndimage
-from Image import Image
+from image import Image
 
 
 class Movie:

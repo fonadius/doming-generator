@@ -1,6 +1,6 @@
-from Image import Image
-from DeformationModel import DeformationModel
-from Movie import Movie
+from image import Image
+from deformation_model import DeformationModel
+from movie import Movie
 import numpy as np
 from scipy import optimize
 

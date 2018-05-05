@@ -1,8 +1,8 @@
 import unittest
 import random
 import numpy as np
-from Movie import Movie
-from Image import Image
+from movie import Movie
+from image import Image
 import math
 
 
