@@ -76,7 +76,7 @@ class Image:
 
     def load_dummy(self, time_stamp, add_grid=True, grid_size=2, grid_spacing=20):
         self.image_data = misc.face(True)
-        self.shrink()
+        self.shrink_to_resonable()
         if add_grid:
             self.add_grid(grid_size, grid_spacing)
         self.time_stamp = time_stamp
@@ -86,10 +86,13 @@ class Image:
         # self.smaller()
         self.time_stamp = time_stamp
 
-    def shrink(self):
-        # self.image_data = skimage.transform.resize(self.image_data, (384, 512))
-        self.image_data = skimage.transform.resize(self.image_data, (195, 255))
-        # self.image_data = skimage.transform.resize(self.image_data, (96, 128))
+    def shrink_to_resonable(self):
+        self.resize((384, 512))
+        self.resize((195, 255))
+        self.resize((96, 128))
+
+    def resize(self, shape):
+        self.image_data = skimage.transform.resize(self.image_data, shape)
 
     def save(self, folder_path, suffix="", name=None):
         if not self.is_initialized():
