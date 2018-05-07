@@ -33,12 +33,19 @@ def restore_images(count):
 
     movie.correct_global_shift()
 
-    for i, m in enumerate(movie.micrographs):
-        m.save("./", "g")
+    # for i, m in enumerate(movie.micrographs):
+    #     m.save("./", "globaly")
 
     print("Global correction performed.")
 
     local_shifts = movie.calculate_local_shifts()
+
+    movie = Movie()
+    for i in range(count):
+        img = Image()
+        img.load("./" + str(i) + ".png", i)
+        movie.add(img)
+    print("Images loaded.")
 
     print("Local shifts calculated")
 
@@ -49,8 +56,8 @@ def restore_images(count):
 
     for i in range(len(movie.micrographs)):
         m = movie.micrographs[i]
-        movie.micrographs[i] = model.apply_model(m, m.time_stamp, 0)
-        movie.micrographs[i].save("./", "r" + str(i))
+        movie.micrographs[i] = model.apply_model(m, m.time_stamp, 0, 2)
+        movie.micrographs[i].save("./", name=(str(i) + "resulting"))
         print("Restored image " + str(i))
 
     movie.save_sum("./")
@@ -79,6 +86,6 @@ def test_global_correction(count):
 
 
 if __name__ == "__main__":
-    deform_images(10)
+    # deform_images(10)
     restore_images(10)
 
