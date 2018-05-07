@@ -105,8 +105,8 @@ class DeformationModel:
         scale = np.ones((2, 9)) / 1000
         res = flt * scale
 
-        res[0][8] = res[0][8] / 100
-        res[1][8] = res[1][8] / 100
+        # res[0][8] = res[0][8] / 10
+        # res[1][8] = res[1][8] / 10
 
         return res
 
