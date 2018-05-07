@@ -1,6 +1,8 @@
 import unittest
 import random
 import numpy as np
+import sys
+sys.path.append("..")
 from movie import Movie
 from image import Image
 import math
