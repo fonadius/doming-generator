@@ -68,6 +68,10 @@ class Image:
         return self.image_data.shape[0]
 
     def add_grid(self, grid_size=2, grid_spacing=20):
+        """Adds black grid over the image.
+        :param grid_size: width of lines
+        :param grid_spacing: distance between lines
+        """
         for yi in range(self.image_data.shape[0]):
             for xi in range(self.image_data.shape[1]):
                 if (xi + grid_spacing) % (grid_spacing + grid_size) < grid_size or \
@@ -75,21 +79,34 @@ class Image:
                     self.image_data[yi][xi] = 0.0
 
     def load_dummy(self, time_stamp, add_grid=True, grid_size=2, grid_spacing=20):
+        """
+        Loads testing image
+        :param time_stamp:
+        :param add_grid:
+        :param grid_size:
+        :param grid_spacing:
+        """
         self.image_data = misc.face(True)
-        self.shrink_to_resonable()
+        self.shrink_to_reasonable()
         if add_grid:
             self.add_grid(grid_size, grid_spacing)
         self.time_stamp = time_stamp
 
     def load(self, path, time_stamp):
+        """
+        Loads image from file
+        :param path:
+        :param time_stamp:
+        """
         self.image_data = misc.imread(path)
         # self.smaller()
         self.time_stamp = time_stamp
 
-    def shrink_to_resonable(self):
-        self.resize((384, 512))
+    def shrink_to_reasonable(self):
+        """Shrinks image to size which is program able to restore in reasonable time"""
+        # self.resize((384, 512))
         self.resize((195, 255))
-        self.resize((96, 128))
+        # self.resize((96, 128))
 
     def resize(self, shape):
         self.image_data = skimage.transform.resize(self.image_data, shape)

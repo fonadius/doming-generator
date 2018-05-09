@@ -60,6 +60,13 @@ class DeformationModel:
         return img
 
     def calculate_shift(self, y, x, t, axis):
+        """
+        Calculates shift on defined positions
+        :param y:
+        :param x:
+        :param t:
+        :param axis: 0 is y, 1 is x
+        """
         return DeformationModel.calculate_shifts_from_coeffs(y, x, t, self.coeffs[axis])
 
     @staticmethod
@@ -73,6 +80,13 @@ class DeformationModel:
         return shift
 
     def initialize_model(self, positions, shifts_y, shifts_x):
+        """
+        Estimates model coefficients from calculated shifts.
+        :param positions: Positions where shifts were calculated (y, x, time_stamp)
+        :param shifts_y: shifts on y axis for positions
+        :param shifts_x: shifts on x axis for positions
+        :return:
+        """
         shifts_y = list(map(lambda x: x*-1, shifts_y))
         shifts_x = list(map(lambda x: x*-1, shifts_x))
 
@@ -105,8 +119,9 @@ class DeformationModel:
         scale = np.ones((2, 9)) / 1000
         res = flt * scale
 
-        # res[0][8] = res[0][8] / 10
-        # res[1][8] = res[1][8] / 10
+        # the quadratic time element is decreased to produce slower deformation
+        res[0][8] = res[0][8] / 10
+        res[1][8] = res[1][8] / 10
 
         return res
 

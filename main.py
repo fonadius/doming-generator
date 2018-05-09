@@ -30,7 +30,7 @@ def deform_file(path=None, shape=None, time_points=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9
         img = Image(path, 0)
 
     if shape is None:
-        img.shrink_to_resonable()
+        img.shrink_to_reasonable()
     else:
         img.resize(shape)
 
@@ -39,7 +39,7 @@ def deform_file(path=None, shape=None, time_points=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9
 
     model = DeformationModel()
     if coefficients is None:
-        model.generate_random_coeffs()
+        model.initialize_model_randomly()
         # todo: modify time coefficients to provide reasonable results for defined number of time_points
     else:
         model.coeffs = coefficients
@@ -63,7 +63,7 @@ def deform_file(path=None, shape=None, time_points=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9
     return results, model.coeffs
 
 
-def correct_files(paths=[], time_points=[], coefficients=None, save_path=None, save_partial=False, verbose=True):
+def motion_correct_files(paths=[], time_points=[], coefficients=None, save_path=None, save_partial=False, verbose=True):
     """
     Corrects motion (proof of concept implementation)
     :param paths: paths to deformed gray-scale files
@@ -121,90 +121,12 @@ def correct_files(paths=[], time_points=[], coefficients=None, save_path=None, s
     return movie.sum_images()
 
 
-# -------testing functions------
-
-
-def deform_images(count):
-    print("Deforming images")
-    orig = Image()
-    orig.load_dummy(0)
-
-    model = DeformationModel()
-    print("Applying model.")
-    model.initialize_model_randomly(orig.image_data.shape)
-
-    for i in range(count):
-        deformed_image = model.apply_model(orig, 0, i)
-        deformed_image.save("./")
-        print("Done iteration ", i)
-
-    print("Deformation successful.")
-
-
-def restore_images(count):
-    print("Starting restoration.")
-    movie = Movie()
-    for i in range(count):
-        img = Image()
-        img.load("./" + str(i) + ".png", i)
-        movie.add(img)
-    print("Images loaded.")
-
-    movie.correct_global_shift()
-
-    # for i, m in enumerate(movie.micrographs):
-    #     m.save("./", "globaly")
-
-    print("Global correction performed.")
-
-    local_shifts = movie.calculate_local_shifts()
-
-    movie = Movie()
-    for i in range(count):
-        img = Image()
-        img.load("./" + str(i) + ".png", i)
-        movie.add(img)
-    print("Images loaded.")
-
-    print("Local shifts calculated")
-
-    model = DeformationModel()
-    model.initialize_model(*local_shifts)
-
-    print("Deformation model calculated.")
-
-    for i in range(len(movie.micrographs)):
-        m = movie.micrographs[i]
-        movie.micrographs[i] = model.apply_model(m, m.time_stamp, 0, 2)
-        movie.micrographs[i].save("./", name=(str(i) + "resulting"))
-        print("Restored image " + str(i))
-
-    movie.save_sum("./")
-    print("Restoration finished.")
-
-
-def test_global_correction(count):
-    print("Starting restoration.")
-    movie = Movie()
-    for i in range(count):
-        img = Image()
-        img.load_dummy(i)
-        img.image_data = movie.correct_for_shift(img.image_data, 0, -i * 2)
-        movie.add(img)
-    print("Images loaded.")
-
-    for m in movie.micrographs:
-        m.save("./")
-
-    movie.correct_global_shift()
-
-    for i, m in enumerate(movie.micrographs):
-        m.save("./", "r")
-
-    movie.save_sum("./")
-
-
 if __name__ == "__main__":
-    deform_images(10)
-    restore_images(10)
+    time_span = 10
+    time_step = 0.5
+    time_points = [x * time_step for x in range(int(time_span / time_step))]
+    deform_file(save="./", time_points=time_points)
+
+    paths = ["DeformationTime"+str(x) + ".png" for x in time_points]
+    motion_correct_files(paths=paths, time_points=time_points, save_path="./")
 
