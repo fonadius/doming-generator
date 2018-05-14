@@ -3,23 +3,28 @@ from deformation_model import DeformationModel
 from movie import Movie
 import numpy as np
 from scipy import optimize
+import mrcfile as mrc
 
 
-def deform_file(path=None, shape=None, time_points=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), coefficients=None, save=None,
-                add_grid=True, verbose=True):
+def deform_file(path=None, shape=None, time_points=None, coefficients=None, save=None,
+                add_grid=True, save_movie=True, verbose=True):
     """
     Deforms provided file based on the deformation model.
     :param path: Path to an image file in gray-scale, which should be loaded. If None scipy.misc.face is used instead.
     :param shape: array like object with at least two elements describing (width, height) of the image
-    :param time_points: determines number of deformed images generated and their time
+    :param time_points: determines number of deformed images generated and their time (None is equal to range(10))
     :param coefficients: coefficients used in deformation model, describing the doming
-    :param save: None - images are only returned, other inputs are regarded as folder paths where the result is saved
-    in current working folder
+    :param save: None - images are only returned, other inputs are regarded as folder paths where the results are saved
     :param add_grid: True - black grid is drawn over the image to better show the resulting deformation
+    :param save_movie: True - if save=True then also the movie of the deformed images is saved as a STAR file format (with
+    the individual images saved as mrc files)
     :param verbose: True - printing additional information about the current process state
     :return: ([images], coefficients) - images are numpy array with resulting data ordered as time_points
                                       - coefficients are coefficients used in the deformation model
     """
+    if time_points is None:
+        time_points = range(10)
+
     if verbose:
         print("Loading file")
 
@@ -39,8 +44,7 @@ def deform_file(path=None, shape=None, time_points=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9
 
     model = DeformationModel()
     if coefficients is None:
-        model.initialize_model_randomly()
-        # todo: modify time coefficients to provide reasonable results for defined number of time_points
+        model.initialize_model_randomly(img.shape())
     else:
         model.coeffs = coefficients
 
@@ -54,8 +58,16 @@ def deform_file(path=None, shape=None, time_points=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9
         if verbose:
             print("Saving results")
 
-        for t, i in zip(time_points, results):
-            i.save(save, name="DeformationTime" + str(t))
+        for i in results:
+            i.save(save, name="DeformationTime" + str(i.time_stamp))
+
+        if save_movie:
+            movie = Movie()
+            for i in results:
+                movie.add(i, True)
+            movie.save_movie_starfile("./", "movie")
+
+    results = [i.image_data for i in results]
 
     if verbose:
         print("Deformations finished.")
@@ -123,10 +135,10 @@ def motion_correct_files(paths=[], time_points=[], coefficients=None, save_path=
 
 if __name__ == "__main__":
     time_span = 10
-    time_step = 0.5
+    time_step = 2
     time_points = [x * time_step for x in range(int(time_span / time_step))]
-    deform_file(save="./", time_points=time_points)
+    results, coeffs = deform_file(save="./", time_points=time_points, verbose=True)
 
-    paths = ["DeformationTime"+str(x) + ".png" for x in time_points]
-    motion_correct_files(paths=paths, time_points=time_points, save_path="./")
+    # paths = ["DeformationTime"+str(x) + ".png" for x in time_points]
+    # motion_correct_files(paths=paths, time_points=time_points, save_path="./", save_partial=True, verbose=True)
 

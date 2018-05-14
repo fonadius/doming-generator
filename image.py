@@ -5,6 +5,7 @@ import numpy as np
 import warnings
 import skimage.transform
 import os.path
+import mrcfile as mrc
 
 
 class Image:
@@ -98,22 +99,21 @@ class Image:
         :param path:
         :param time_stamp:
         """
-        self.image_data = misc.imread(path)
-        # self.smaller()
+        self.image_data = misc.imread(path, flatten=True)
         self.time_stamp = time_stamp
 
     def shrink_to_reasonable(self):
         """Shrinks image to size which is program able to restore in reasonable time"""
         # self.resize((384, 512))
-        self.resize((195, 255))
-        # self.resize((96, 128))
+        # self.resize((195, 255))
+        self.resize((96, 128))
 
     def resize(self, shape):
-        self.image_data = skimage.transform.resize(self.image_data, shape)
+        self.image_data = skimage.transform.resize(self.image_data, shape, preserve_range=True)
 
     def save(self, folder_path, suffix="", name=None):
         if not self.is_initialized():
-            raise RuntimeError("Cannot saved uninitialized image")
+            raise RuntimeError("Cannot saved an uninitialized image")
 
         if not os.path.exists(folder_path):
             raise RuntimeError("Folder does not exists: '" + folder_path + "'")
@@ -124,3 +124,14 @@ class Image:
             name = os.path.join(folder_path, name + ".png")
 
         misc.imsave(name, self.image_data)
+
+    def save_mrc(self, path):
+        if self.image_data is None:
+            warnings.warn("Trying to save an empty image.")
+            return
+
+        # default float64 type cannot be saved into mrc file format
+        cp = self.image_data.astype(dtype=np.float32)
+
+        with mrc.new(path, overwrite=True) as f:
+            f.set_data(cp)

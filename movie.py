@@ -2,6 +2,7 @@ import numpy as np
 from scipy import signal
 from scipy import ndimage
 from image import Image
+import os.path
 
 
 class Movie:
@@ -166,6 +167,35 @@ class Movie:
     def sum_images(self):
         """Sums all images"""
         return np.sum((m.image_data for m in self.micrographs), axis=0)  # // len(self.micrographs)
+
+    def save_movie_starfile(self, folder_path, file_name):
+        """Saves the whole movie into STAR format file defined in XMIPP
+        (http://xmipp.cnb.csic.es/twiki/bin/view/Xmipp/FileFormats#Metadata_Files), where each image is individually
+        saved into mrc file. Beside references to the images, the STAR file also contains time stamps for each image.
+        _image and _time_stamp labels inside _data_movie_stack.
+        :param folder_path: where to save the individual files
+        :param file_name: how should be files named. STAR file will be "'name'.xmd" the image files will be imgxx_name.mrc,
+        where xx is id of image eg. 01, 23, ...."""
+        # save the images into mrc file
+        names = [file_name + str(i).zfill(2) + ".mrc" for i in range(len(self.micrographs))]
+        for name, img in zip(names, self.micrographs):
+            img.save_mrc(os.path.join(folder_path, name))
+
+        # create the encapsulating STAR file
+        with open(os.path.join(folder_path, file_name + ".xmd"), "w") as f:
+            f.write("# XMIPP_STAR_1 *\n")
+            f.write("##########################################################################\n")
+            f.write("# This file contains movie stack. Each _image item is name of a mrc file with one frame and ")
+            f.write("_time_stamp is its timestamp\n")
+            f.write("##########################################################################\n")
+            f.write("\n")
+            f.write("data_movie_stack\n")
+            f.write("loop_\n")
+            f.write("  _image\n")
+            f.write("  _time_stamp\n")
+
+            for name, img in zip(names, self.micrographs):
+                f.write("  " + name + "  " + str(img.time_stamp) + "\n")
 
     def save_sum(self, folder_path):
         img = Image()
