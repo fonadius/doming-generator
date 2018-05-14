@@ -2,7 +2,8 @@
 import numpy as np
 import my_math
 from image import Image
-from scipy import optimize, signal
+from scipy import optimize
+import skimage.transform
 import math
 
 
@@ -29,13 +30,17 @@ class DeformationModel:
 
         calc_shift_fnc = self.calculate_shift
         orig_get_fnc = original.get
-        inetrp_fnc = my_math.linear_interpolation
+        interp_fnc = my_math.linear_interpolation
 
         def generate(y, x):
             """Function describing the transformed image"""
+            # the indices supplied to shift calculation must retain their original meaning
+            realy = y / resolution_scaling_factor
+            realx = x / resolution_scaling_factor
+
             # move to time t2
-            posy = y + calc_shift_fnc(y, x, t2, 0) - calc_shift_fnc(y, x, t1, 0)
-            posx = x + calc_shift_fnc(y, x, t2, 1) - calc_shift_fnc(y, x, t1, 1)
+            posy = y + calc_shift_fnc(realy, realx, t2, 0) - calc_shift_fnc(realy, realx, t1, 0)
+            posx = x + calc_shift_fnc(realy, realx, t2, 1) - calc_shift_fnc(realy, realx, t1, 1)
 
             x_left = int(posx)   # math.floor(pos[0])
             x_right = x_left + 1    # math.ceil(pos[0])
@@ -47,15 +52,14 @@ class DeformationModel:
             v21 = orig_get_fnc(y_up, x_left, resolution_scaling_factor)
             v22 = orig_get_fnc(y_up, x_right, resolution_scaling_factor)
 
-            return inetrp_fnc(y_down, x_left, y_up, x_right, v11, v12, v21, v22, posy, posx)
+            return interp_fnc(y_down, x_left, y_up, x_right, v11, v12, v21, v22, posy, posx)
 
         img.image_data = np.fromfunction(np.vectorize(generate),
                                          (original.shape()[0] * resolution_scaling_factor,
                                           original.shape()[1] * resolution_scaling_factor))
 
         if resolution_scaling_factor != 1:
-            img.image_data = signal.decimate(signal.decimate(img.image_data, resolution_scaling_factor),
-                                             resolution_scaling_factor, axis=0)
+            img.image_data = skimage.transform.resize(img.image_data, original.shape(), preserve_range=True)
 
         return img
 
@@ -113,15 +117,29 @@ class DeformationModel:
     @staticmethod
     def generate_random_coeffs(shape=None):
         """Generates vector of reasonable random model coefficients a_i.
-            shape is (height, width) tuple"""
-        # TODO: coefficients should not be just random but also reasonable
+            shape is (height, width) tuple.
+            Generated coefficients are in interval <-0.1,0.1> with c_0 in <-0.01, 0.01>.
+            :param shape: Shape of the image for which the coefficients should be generated. If provided, the
+            coefficients are modified to place the center of doming into the center of the picture."""
         flt = np.random.rand(2, 9)
-        scale = np.ones((2, 9)) / 1000
-        res = flt * scale
+        res = ((flt * 2) - 1) / 10
+        res[0][0] = res[0][0] / 10
+        res[1][0] = res[1][0] / 10
+
+        if shape is not None:
+            # move the center of deformation into middle of image
+            halfy = shape[0] / 2
+            halfx = shape[1] / 2
+
+            for i in range(2):
+                c = res[i]
+                c[0] = c[0] - c[1]*halfx - c[3]*halfy + c[2]*halfx*halfx + c[5]*halfy*halfx + c[4]*halfy*halfy
+                c[1] = c[1] - 2*c[2]*halfx - c[5]*halfy
+                c[3] = c[3] - 2*c[4]*halfy - c[5]*halfx
 
         # the quadratic time element is decreased to produce slower deformation
-        res[0][8] = res[0][8] / 10
-        res[1][8] = res[1][8] / 10
+        res[0][8] = res[0][8] / 100
+        res[1][8] = res[1][8] / 100
 
         return res
 
