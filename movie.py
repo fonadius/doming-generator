@@ -186,13 +186,13 @@ class Movie:
             f.write("# XMIPP_STAR_1 *\n")
             f.write("##########################################################################\n")
             f.write("# This file contains movie stack. Each _image item is name of a mrc file with one frame and ")
-            f.write("_time_stamp is its timestamp\n")
+            f.write("_time is its timestamp\n")
             f.write("##########################################################################\n")
             f.write("\n")
             f.write("data_movie_stack\n")
             f.write("loop_\n")
             f.write("  _image\n")
-            f.write("  _time_stamp\n")
+            f.write("  _time\n")
 
             for name, img in zip(names, self.micrographs):
                 f.write("  " + name + "  " + str(img.time_stamp) + "\n")
