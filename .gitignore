@@ -102,3 +102,8 @@ ENV/
 
 # generated images
 *.png
+*.mrc
+*.xmd
+
+.pytest_cache/
+tests/.pytest_cache/
