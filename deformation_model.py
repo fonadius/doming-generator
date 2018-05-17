@@ -115,7 +115,7 @@ class DeformationModel:
         self.coeffs = self.generate_random_coeffs(shape)
 
     @staticmethod
-    def generate_random_coeffs(shape=None):
+    def generate_random_coeffs(shape=None, t1 = 1, t2 = 50):
         """Generates vector of reasonable random model coefficients a_i.
             shape is (height, width) tuple.
             Generated coefficients are in interval <-0.1,0.1> with c_0 in <-0.01, 0.01>.
@@ -138,8 +138,14 @@ class DeformationModel:
                 c[3] = c[3] - 2*c[4]*halfy - c[5]*halfx
 
         # the quadratic time element is decreased to produce slower deformation
-        res[0][8] = res[0][8] / 100
-        res[1][8] = res[1][8] / 100
+        for i in range(2):
+            c = res[i]
+            x1 = np.random.uniform(0.001, 0.1)
+            x2 = t2*x1 + np.random.uniform(0.0001, 0.01)
+
+            c[8] = (x2 - t2*x1) / (t2*t2*(3*t1 + 2*t2))
+            c[7] = -3*t2*c[8]
+            c[6] = (x2 - 2*c[8]*t2*t2*t2) / t2
 
         return res
 
