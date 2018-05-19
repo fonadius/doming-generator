@@ -115,37 +115,57 @@ class DeformationModel:
         self.coeffs = self.generate_random_coeffs(shape)
 
     @staticmethod
-    def generate_random_coeffs(shape=None, t1 = 1, t2 = 50):
+    def generate_random_coeffs(shape=(2048, 2048), tn=50):
         """Generates vector of reasonable random model coefficients a_i.
             shape is (height, width) tuple.
             Generated coefficients are in interval <-0.1,0.1> with c_0 in <-0.01, 0.01>.
             :param shape: Shape of the image for which the coefficients should be generated. If provided, the
+            :param tn: time stamp of the last generated frame
             coefficients are modified to place the center of doming into the center of the picture."""
-        flt = np.random.rand(2, 9)
-        res = ((flt * 2) - 1) / 10
-        res[0][0] = res[0][0] / 10
-        res[1][0] = res[1][0] / 10
+        res = np.zeros((2, 9))
 
-        if shape is not None:
-            # move the center of deformation into middle of image
-            halfy = shape[0] / 2
-            halfx = shape[1] / 2
-
-            for i in range(2):
-                c = res[i]
-                c[0] = c[0] - c[1]*halfx - c[3]*halfy + c[2]*halfx*halfx + c[5]*halfy*halfx + c[4]*halfy*halfy
-                c[1] = c[1] - 2*c[2]*halfx - c[5]*halfy
-                c[3] = c[3] - 2*c[4]*halfy - c[5]*halfx
-
-        # the quadratic time element is decreased to produce slower deformation
+        # reasonable space-dependent part
+        width = shape[1]
+        height = shape[0]
+        min_val = 1e-12
         for i in range(2):
             c = res[i]
-            x1 = np.random.uniform(0.001, 0.1)
-            x2 = t2*x1 + np.random.uniform(0.0001, 0.01)
 
-            c[8] = (x2 - t2*x1) / (t2*t2*(3*t1 + 2*t2))
-            c[7] = -3*t2*c[8]
-            c[6] = (x2 - 2*c[8]*t2*t2*t2) / t2
+            # generate quadratic coefficients
+            c[2] = np.random.uniform(min_val, (0.03*width) / (width*width))
+            longer = max(width, height)
+            # c[4] is chosen so that ration between it and c[2] is in <1/3, 3> and so that the combined effect of
+            # c[2] and c[4] is at most 5% of the longest image side
+            lower_bound = max(c[2] / 3.0, min_val)
+            upper_bound = min(c[2] * 3.0, (0.05 * longer - c[2] * width) / (height*height))
+            c[4] = np.random.uniform(lower_bound, upper_bound)
+
+            # rotation
+            # print("z = x*x*" + str(c[2]) + "+y*y*" + str(c[4]))
+            rotation = np.random.uniform(-math.pi, math.pi)
+            cs = math.cos(rotation)
+            sn = math.sin(rotation)
+            c[2] = c[2]*cs*cs + c[4]*sn*sn
+            c[4] = c[2]*sn*sn + c[4]*cs*cs
+            c[5] = 2*c[4]*sn*cs - 2*c[2]*sn*cs
+
+            # print("z = x*x*" + str(c[2]) + "+y*y*" + str(c[4]) + "+x*y*" + str(c[5]))
+            # translation of the origin
+            originx = -1*np.random.randint(-0.1 * width, width + 0.1 * width)
+            originy = -1*np.random.randint(-0.1 * height, height + 0.1 * height)
+            c[0] = c[2]*originx*originx + c[4]*originy*originy + c[5]*originy*originx
+            c[1] = 2*c[2]*originx + c[5]*originy
+            c[3] = 2*c[4]*originy + c[5]*originx
+
+            # print("origin", originx, originy)
+            # print(rotation)
+            # print("z = "+str(c[0])+"+x*"+str(c[1])+"+x*x*"+str(c[2]) + "+y*"+str(c[3]) + "+y*y*" + str(c[4]) + "+x*y*" + str(c[5]))
+
+            #time-dependent part
+            xn = np.random.uniform(0.001, 2)  # max scaling value
+            c[6] = (3 * xn) / tn
+            c[7] = (-6*xn) / (tn*tn)
+            c[8] = (4*xn) / (tn*tn*tn)
 
         return res
 
