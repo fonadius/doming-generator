@@ -44,7 +44,7 @@ def deform_file(path=None, shape=None, time_points=None, coefficients=None, save
 
     model = DeformationModel()
     if coefficients is None:
-        model.initialize_model_randomly(img.shape())
+        model.initialize_model_randomly(img.shape(), max(time_points))
     else:
         model.coeffs = coefficients
 

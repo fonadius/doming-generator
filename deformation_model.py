@@ -110,12 +110,12 @@ class DeformationModel:
 
         self.coeffs = result
 
-    def initialize_model_randomly(self, shape=None):
+    def initialize_model_randomly(self, shape=(2048, 2048), tn=50):
         """Randomly generates model with reasonable coefficients."""
-        self.coeffs = self.generate_random_coeffs(shape)
+        self.coeffs = self.generate_random_coeffs(shape, tn)
 
     @staticmethod
-    def generate_random_coeffs(shape=(2048, 2048), tn=50):
+    def generate_random_coeffs(shape, tn):
         """Generates vector of reasonable random model coefficients a_i.
             shape is (height, width) tuple.
             Generated coefficients are in interval <-0.1,0.1> with c_0 in <-0.01, 0.01>.
@@ -127,7 +127,7 @@ class DeformationModel:
         # reasonable space-dependent part
         width = shape[1]
         height = shape[0]
-        min_val = 1e-12
+        min_val = 1e-8
         for i in range(2):
             c = res[i]
 
@@ -151,14 +151,14 @@ class DeformationModel:
 
             # print("z = x*x*" + str(c[2]) + "+y*y*" + str(c[4]) + "+x*y*" + str(c[5]))
             # translation of the origin
-            originx = -1*np.random.randint(-0.1 * width, width + 0.1 * width)
-            originy = -1*np.random.randint(-0.1 * height, height + 0.1 * height)
+            originx = -1*np.random.randint(-int(0.1 * width), int(width + 0.1 * width))
+            originy = -1*np.random.randint(-int(0.1 * height), int(height + 0.1 * height))
             c[0] = c[2]*originx*originx + c[4]*originy*originy + c[5]*originy*originx
             c[1] = 2*c[2]*originx + c[5]*originy
             c[3] = 2*c[4]*originy + c[5]*originx
 
-            # print("origin", originx, originy)
-            # print(rotation)
+            print("origin", originx, originy)
+            print(rotation)
             # print("z = "+str(c[0])+"+x*"+str(c[1])+"+x*x*"+str(c[2]) + "+y*"+str(c[3]) + "+y*y*" + str(c[4]) + "+x*y*" + str(c[5]))
 
             #time-dependent part
@@ -166,6 +166,12 @@ class DeformationModel:
             c[6] = (3 * xn) / tn
             c[7] = (-6*xn) / (tn*tn)
             c[8] = (4*xn) / (tn*tn*tn)
+
+
+            #add some global shift
+            # global_shift = np.random.uniform(-0.05 * shape[i], 0.05*shape[i])
+            # c[0] = global_shift
+            # print(global_shift)
 
         return res
 
