@@ -127,18 +127,23 @@ class DeformationModel:
         # reasonable space-dependent part
         width = shape[1]
         height = shape[0]
-        min_val = 1e-8
+        min_val = 1e-4
         for i in range(2):
             c = res[i]
 
             # generate quadratic coefficients
-            c[2] = np.random.uniform(min_val, (0.03*width) / (width*width))
+            c[2] = np.random.uniform(min_val, (0.05*width) / (width*width))
             longer = max(width, height)
             # c[4] is chosen so that ration between it and c[2] is in <1/3, 3> and so that the combined effect of
             # c[2] and c[4] is at most 5% of the longest image side
-            lower_bound = max(c[2] / 3.0, min_val)
-            upper_bound = min(c[2] * 3.0, (0.05 * longer - c[2] * width) / (height*height))
-            c[4] = np.random.uniform(lower_bound, upper_bound)
+            lower_bound = c[2] / 3.0
+            upper_bound = min(c[2] * 3.0, (0.1 * longer - c[2] * width) / (height*height))
+            c[4] = max(lower_bound, upper_bound)
+
+            # negative = True #np.random.randint(0, 2) == 1
+            # if negative:
+            #     c[2] = -1*c[2]
+            #     c[4] = -1*c[4]
 
             # rotation
             # print("z = x*x*" + str(c[2]) + "+y*y*" + str(c[4]))
@@ -157,8 +162,6 @@ class DeformationModel:
             c[1] = 2*c[2]*originx + c[5]*originy
             c[3] = 2*c[4]*originy + c[5]*originx
 
-            print("origin", originx, originy)
-            print(rotation)
             # print("z = "+str(c[0])+"+x*"+str(c[1])+"+x*x*"+str(c[2]) + "+y*"+str(c[3]) + "+y*y*" + str(c[4]) + "+x*y*" + str(c[5]))
 
             #time-dependent part
@@ -167,11 +170,9 @@ class DeformationModel:
             c[7] = (-6*xn) / (tn*tn)
             c[8] = (4*xn) / (tn*tn*tn)
 
-
-            #add some global shift
+            # add some global shift
             # global_shift = np.random.uniform(-0.05 * shape[i], 0.05*shape[i])
-            # c[0] = global_shift
-            # print(global_shift)
+            # c[0] = -5
 
         return res
 
