@@ -50,7 +50,7 @@ def deform_file(path=None, shape=None, time_points=None, coefficients=None, save
 
     results = []
     for t in time_points:
-        results.append(model.apply_model(img, 0, t, 2))
+        results.append(model.apply_model(img, 0, t))
         if verbose:
             print("Generated deformation in time point:", t)
 
@@ -118,7 +118,7 @@ def motion_correct_files(paths=[], time_points=[], coefficients=None, save_path=
 
     for i in range(len(movie.micrographs)):
         m = movie.micrographs[i]
-        movie.micrographs[i] = model.apply_model(m, m.time_stamp, 0, 2)
+        movie.micrographs[i] = model.apply_model(m, m.time_stamp, 0)
         if save_path and save_partial:
             movie.micrographs[i].save(save_path, name=("partial" + str(i)))
         if verbose:
@@ -135,10 +135,10 @@ def motion_correct_files(paths=[], time_points=[], coefficients=None, save_path=
 
 if __name__ == "__main__":
     time_span = 10
-    time_step = 2
+    time_step = 0.5
     time_points = [x * time_step for x in range(int(time_span / time_step))]
     results, coeffs = deform_file(save="./", time_points=time_points, verbose=True)
 
-    # paths = ["DeformationTime"+str(x) + ".png" for x in time_points]
-    # motion_correct_files(paths=paths, time_points=time_points, save_path="./", save_partial=True, verbose=True)
+    paths = ["DeformationTime"+str(x) + ".png" for x in time_points]
+    motion_correct_files(paths=paths, time_points=time_points, save_path="./", save_partial=True, verbose=True)
 

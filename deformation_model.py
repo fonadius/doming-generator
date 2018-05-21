@@ -136,17 +136,11 @@ class DeformationModel:
             longer = max(width, height)
             # c[4] is chosen so that ration between it and c[2] is in <1/3, 3> and so that the combined effect of
             # c[2] and c[4] is at most 5% of the longest image side
-            lower_bound = c[2] / 3.0
+            lower_bound = min(c[2] / 3.0, (0.1 * longer - c[2] * width) / (height*height))
             upper_bound = min(c[2] * 3.0, (0.1 * longer - c[2] * width) / (height*height))
-            c[4] = max(lower_bound, upper_bound)
-
-            # negative = True #np.random.randint(0, 2) == 1
-            # if negative:
-            #     c[2] = -1*c[2]
-            #     c[4] = -1*c[4]
+            c[4] = np.random.uniform(lower_bound, upper_bound)
 
             # rotation
-            # print("z = x*x*" + str(c[2]) + "+y*y*" + str(c[4]))
             rotation = np.random.uniform(-math.pi, math.pi)
             cs = math.cos(rotation)
             sn = math.sin(rotation)
@@ -154,7 +148,6 @@ class DeformationModel:
             c[4] = c[2]*sn*sn + c[4]*cs*cs
             c[5] = 2*c[4]*sn*cs - 2*c[2]*sn*cs
 
-            # print("z = x*x*" + str(c[2]) + "+y*y*" + str(c[4]) + "+x*y*" + str(c[5]))
             # translation of the origin
             originx = -1*np.random.randint(-int(0.1 * width), int(width + 0.1 * width))
             originy = -1*np.random.randint(-int(0.1 * height), int(height + 0.1 * height))
@@ -162,17 +155,11 @@ class DeformationModel:
             c[1] = 2*c[2]*originx + c[5]*originy
             c[3] = 2*c[4]*originy + c[5]*originx
 
-            # print("z = "+str(c[0])+"+x*"+str(c[1])+"+x*x*"+str(c[2]) + "+y*"+str(c[3]) + "+y*y*" + str(c[4]) + "+x*y*" + str(c[5]))
-
             #time-dependent part
             xn = np.random.uniform(0.001, 2)  # max scaling value
             c[6] = (3 * xn) / tn
             c[7] = (-6*xn) / (tn*tn)
             c[8] = (4*xn) / (tn*tn*tn)
-
-            # add some global shift
-            # global_shift = np.random.uniform(-0.05 * shape[i], 0.05*shape[i])
-            # c[0] = -5
 
         return res
 
