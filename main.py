@@ -116,8 +116,6 @@ def motion_correct_files(paths=[], time_points=[], coefficients=None,
         for p, t in zip(paths, time_points):
             img = Image(p, t)
             movie.add(img)
-    print("LOADED")
-    return
 
     if verbose:
         print("Correcting for global shift")
