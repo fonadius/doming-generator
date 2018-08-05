@@ -23,8 +23,10 @@ def linear_interpolation(y1, x1, y2, x2, v11, v12, v21, v22, p_y, p_x):
        y2: v21 ......... v22
            x1             x2
         (y increases from top to down, x increases from left to right)
-        Values q_i are expected to be in strict orthogonal grid, where q11 and q21 have the same x coordinates (the same
-        applies for q12 and q22) and q11 and q12 have the same y coordinates (the same applies for q21 and q22).
+        Values q_i are expected to be in strict orthogonal grid, where q11 and
+        q21 have the same x coordinates (the same
+        applies for q12 and q22) and q11 and q12 have the same y coordinates
+        (the same applies for q21 and q22).
 
         :param y1 y position of v11 and v12
         :param x1 x position of v11 and v21

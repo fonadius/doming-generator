@@ -18,7 +18,8 @@ class Image:
             self.load(path, time_stamp)
 
     def __getitem__(self, item):
-        """Accessing image data. Item should be two element list-like object of integers and is interpreted as (y, x)"""
+        """Accessing image data. Item should be two element list-like object of
+        integers and is interpreted as (y, x)"""
         return self.get(item[0], item[1])
 
     def get(self, y, x, resolution_scaling_factor=1):
@@ -30,14 +31,16 @@ class Image:
         return self.image_data[y][x]
 
     def __setitem__(self, key, value):
-        """Setting image data. Key should be two element lit-like object of integers and is interpreted as (y, x)"""
+        """Setting image data. Key should be two element lit-like object of
+        integers and is interpreted as (y, x)"""
         self.set(key[0], key[1], value)
 
     def set(self, y, x, value):
         """Setting image data."""
         if self.__outside_boundaries(y, x):
             # Do nothing, when trying to set element outside the image
-            warnings.warn("Trying to set element (y:" + str(value[0]) + ", x:" + str(value[1]) + ") outside the image.")
+            warnings.warn("Trying to set element (y:" + str(value[0]) + \
+                          ", x:" + str(value[1]) + ") outside the image.")
             return
 
         self.image_data[y][x] = value
@@ -57,7 +60,8 @@ class Image:
         return self.time_stamp is not None and self.image_data is not None
 
     def correct_for_shift(self, y_shift, x_shift):
-        self.image_data = ndimage.interpolation.shift(self.image_data, (-y_shift, -x_shift))
+        self.image_data = ndimage.interpolation.shift(self.image_data,
+                                                      (-y_shift, -x_shift))
 
     def shape(self):
         return self.image_data.shape
@@ -75,11 +79,13 @@ class Image:
         """
         for yi in range(self.image_data.shape[0]):
             for xi in range(self.image_data.shape[1]):
-                if (xi + grid_spacing) % (grid_spacing + grid_size) < grid_size or \
-                        (yi + grid_spacing) % (grid_spacing + grid_size) < grid_size:
+                if (xi + grid_spacing)%(grid_spacing + grid_size) < grid_size \
+                        or \
+                    (yi + grid_spacing)%(grid_spacing + grid_size) < grid_size:
                     self.image_data[yi][xi] = 0.0
 
-    def load_dummy(self, time_stamp, add_grid=True, grid_size=2, grid_spacing=20):
+    def load_dummy(self, time_stamp, add_grid=True, grid_size=2,
+                   grid_spacing=20):
         """
         Loads testing image
         :param time_stamp:
@@ -103,13 +109,15 @@ class Image:
         self.time_stamp = time_stamp
 
     def shrink_to_reasonable(self):
-        """Shrinks image to size which is program able to restore in reasonable time"""
+        """Shrinks image to size which is program able to restore in reasonable
+        time"""
         self.resize((384, 512))
         # self.resize((195, 255))
         # self.resize((96, 128))
 
     def resize(self, shape):
-        self.image_data = skimage.transform.resize(self.image_data, shape, preserve_range=True)
+        self.image_data = skimage.transform.resize(self.image_data, shape,
+                                                   preserve_range=True)
 
     def save(self, folder_path, suffix="", name=None):
         if not self.is_initialized():
@@ -119,7 +127,8 @@ class Image:
             raise RuntimeError("Folder does not exists: '" + folder_path + "'")
 
         if name is None:
-            name = os.path.join(folder_path, str(self.time_stamp) + suffix + ".png")
+            name = os.path.join(folder_path, str(self.time_stamp) + suffix + \
+                                ".png")
         else:
             name = os.path.join(folder_path, name + ".png")
 
