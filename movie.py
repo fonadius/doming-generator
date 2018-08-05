@@ -175,7 +175,23 @@ class Movie:
     def load_compact_mrc(self, file_path, time_points):
         """Loads movie from mrc file. (All frames are saved in one mrc file)"""
         with mrc.open(file_path) as f:
-            pass
+            img_count = f.data.shape[2]
+            split_axis = list(range(1, img_count))
+            splitted = np.dsplit(f.data, split_axis)
+            indiv_img = np.squeeze(splitted, axis=2)
+
+            # add images into self
+            if len(self.micrographs) != 0:  # already conatins data
+                warning.warn("Loading mrc file data inro non-empty file.")
+                self.micrographs = []
+
+            if len(time_points) != len(indiv_img):
+                raise ValueError("Lenght of time_points doesn't corresponds " +
+                                 "to the number of images contained in file.")
+
+            for img,t in zip(indiv_img, time_points):
+                self.add(Image(time_stamp = t, img_data = img))
+
 
     def sum_images(self):
         """Sums all images"""

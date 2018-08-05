@@ -69,8 +69,8 @@ def deform_file(path=None, shape=None, time_points=None, coefficients=None,
         if verbose:
             print("Saving results")
 
-        # for i in results:
-            # i.save(save, name="DeformationTime" + str(i.time_stamp))
+        for i in results:
+            i.save(save, name="DeformationTime" + str(i.time_stamp))
 
         if save_movie:
             movie = Movie()
@@ -107,13 +107,17 @@ def motion_correct_files(paths=[], time_points=[], coefficients=None,
         print("Loading files")
 
     movie = Movie()
-    if (len(path) == 1 and path[0].endswith("mrc")):
+    if (len(paths) == 1 and paths[0].endswith("mrc")):
         # single compact mrc file
-        movie.load_compact_mrc(path[0], time_points)
+        movie.load_compact_mrc(paths[0], time_points)
+        for img in movie.micrographs:
+            img.save("./", "ld")
     else:
         for p, t in zip(paths, time_points):
             img = Image(p, t)
             movie.add(img)
+    print("LOADED")
+    return
 
     if verbose:
         print("Correcting for global shift")
@@ -156,10 +160,11 @@ if __name__ == "__main__":
     time_span = 10
     time_step = 0.5
     time_points = [x * time_step for x in range(int(time_span / time_step))]
-    results, coeffs = deform_file(save="./", time_points=time_points,
-                                  verbose=True)
+    # results, coeffs = deform_file(save="./", time_points=time_points,
+                                  # verbose=True)
 
     # paths = ["DeformationTime"+str(x) + ".png" for x in time_points]
-    # motion_correct_files(paths=paths, time_points=time_points, save_path="./",
-                         # save_partial=True, verbose=True)
+    paths = ["./movie.mrc"]
+    motion_correct_files(paths=paths, time_points=time_points, save_path="./",
+                         save_partial=False, verbose=True)
 

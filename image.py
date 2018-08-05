@@ -10,12 +10,15 @@ import mrcfile as mrc
 
 class Image:
 
-    def __init__(self, path=None, time_stamp=None):
+    def __init__(self, path=None, time_stamp=None, img_data=None):
         self.image_data = None
         self.time_stamp = None
 
         if path is not None and time_stamp is not None:
             self.load(path, time_stamp)
+        elif path is None and time_stamp is not None and img_data is not None:
+            self.image_data = img_data
+            self.time_stamp = time_stamp
 
     def __getitem__(self, item):
         """Accessing image data. Item should be two element list-like object of
