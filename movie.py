@@ -132,6 +132,7 @@ class Movie:
             last = [0, 0]
             for ip, p in enumerate(partitions):
                 size_y = p[it].shape[0]
+                size_x = p[it].shape[1]
 
 
                 center_pos.append((last[0] + size_y // 2,
@@ -246,11 +247,11 @@ class Movie:
             for name, img in zip(names, self.micrographs):
                 f.write("  " + name + "  " + str(img.time_stamp) + "\n")
 
-    def save_sum(self, folder_path):
+    def save_sum(self, folder_path, ending = "_total"):
         img = Image()
         img.time_stamp = 0
         img.image_data = self.sum_images()
-        img.save(folder_path, "_total")
+        img.save(folder_path, ending)
 
     @staticmethod
     def correct_for_shift(data, y_shift, x_shift):

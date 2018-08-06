@@ -117,9 +117,13 @@ def motion_correct_files(paths=[], time_points=[], coefficients=None,
             img = Image(p, t)
             movie.add(img)
 
+    movie.save_sum("./", "_simple_total")
+
     if verbose:
         print("Correcting for global shift")
     movie.correct_global_shift()
+
+    movie.save_sum("./", "_global_corrected_total")
 
     if coefficients is None:
         if verbose:
