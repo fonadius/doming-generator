@@ -176,21 +176,15 @@ class Movie:
     def load_compact_mrc(self, file_path, time_points):
         """Loads movie from mrc file. (All frames are saved in one mrc file)"""
         with mrc.open(file_path) as f:
-            img_count = f.data.shape[2]
-            split_axis = list(range(1, img_count))
-            splitted = np.dsplit(f.data, split_axis)
-            indiv_img = np.squeeze(splitted, axis=2)
-
-            # add images into self
             if len(self.micrographs) != 0:  # already conatins data
                 warning.warn("Loading mrc file data inro non-empty file.")
                 self.micrographs = []
 
-            if len(time_points) != len(indiv_img):
+            if len(time_points) != len(f.data):
                 raise ValueError("Lenght of time_points doesn't corresponds " +
                                  "to the number of images contained in file.")
 
-            for img,t in zip(indiv_img, time_points):
+            for img,t in zip(f.data, time_points):
                 self.add(Image(time_stamp = t, img_data = img))
 
 
@@ -206,11 +200,12 @@ class Movie:
 
         # merge images into one 3D one with float32 data format (float64 is not
         # compatible with mrc file format)
-        res = np.dstack([i.image_data for i in self.micrographs])
+        res = np.array([i.image_data for i in self.micrographs])
         cp = res.astype(dtype=np.float32)
 
         with mrc.new(file_path + "movie.mrc", overwrite=True) as f:
             f.set_data(cp)
+            f.set_image_stack()
 
     def save_movie_starfile(self, folder_path, file_name):
         """Saves the whole movie into STAR format file defined in XMIPP

@@ -1,5 +1,6 @@
 """Allows operations on image"""
 
+from scipy import misc
 from scipy import ndimage
 import numpy as np
 import warnings

@@ -162,8 +162,8 @@ if __name__ == "__main__":
     time_span = 10
     time_step = 0.5
     time_points = [x * time_step for x in range(int(time_span / time_step))]
-    # results, coeffs = deform_file(save="./", time_points=time_points,
-                                  # verbose=True)
+    results, coeffs = deform_file(save="./", time_points=time_points,
+                                  verbose=True)
 
     # paths = ["DeformationTime"+str(x) + ".png" for x in time_points]
     paths = ["./movie.mrc"]
