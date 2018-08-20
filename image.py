@@ -88,6 +88,38 @@ class Image:
                     (yi + grid_spacing)%(grid_spacing + grid_size) < grid_size:
                     self.image_data[yi][xi] = 0.0
 
+    def shift_part(self, x0, y0, x1, y1, shiftX, shiftY, newVal=0):
+        d = np.zeros((abs(y0 - y1), abs(x0 - x1)))
+        for yi in range(self.image_data.shape[0]):
+            for xi in range(self.image_data.shape[1]):
+                y = yi - y0
+                x = xi - x0
+                d[y][x] = self.image_data[yi][xi]
+                self.image_data[yi][xi] = newVal
+
+        for yi in range(d.shape[0]):
+            for xi in range(d.shape[1]):
+                y = y0 + yi + shiftY
+                x = x0 + xi + shiftX
+                self.image_data[y][x] = d[yi][xi]
+
+    def shift_patches(self, shiftsX, shiftsY):
+        x0 = 0
+        y0 = 0
+        x1 = 0
+        y1 = 0
+        sizes = Movie.partitions_size(self.image_data.shape)
+        for yi in range(5):
+            y0 = y1
+            y1 = y1 + sizes[0][yi]
+            x0 = 0
+            x1 = 0
+            for xi in range(5):
+                x0 = x1
+                x1 = x1 + sizes[1][xi]
+            self.shift_part(x0, y0, x1, y1, shiftsX[i], shiftsY[i])
+
+
     def load_dummy(self, time_stamp, add_grid=True, grid_size=2,
                    grid_spacing=20):
         """
